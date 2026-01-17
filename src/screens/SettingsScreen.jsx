@@ -80,6 +80,25 @@ export default function SettingsScreen() {
       </div>
 
       <div className="form-field">
+        <label className="form-label" htmlFor="time-mode">
+          Time handling
+        </label>
+        <select
+          id="time-mode"
+          value={preferences.timeMode ?? 'local'}
+          onChange={(event) =>
+            dispatch({
+              type: 'SET_PREFERENCES',
+              values: { timeMode: event.target.value },
+            })
+          }
+        >
+          <option value="local">Local time</option>
+          <option value="timezone">Timezone</option>
+        </select>
+      </div>
+
+      <div className="form-field">
         <span className="form-label">Export</span>
         <button className="btn btn-secondary" type="button" onClick={handleExport}>
           Export JSON

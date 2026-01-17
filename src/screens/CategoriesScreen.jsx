@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import CategoryPill from '../components/CategoryPill'
+import EmojiPickerDialog from '../components/EmojiPickerDialog'
+import { getDefaultCategoryIcon } from '../data/sampleData'
 import { useAppDispatch, useAppState } from '../state/AppState'
 import { CATEGORY_COLORS } from '../utils/constants'
 import { validateCategoryInput } from '../utils/validation'
@@ -6,8 +9,13 @@ import { validateCategoryInput } from '../utils/validation'
 export default function CategoriesScreen() {
   const { categories } = useAppState()
   const dispatch = useAppDispatch()
-  const [values, setValues] = useState({ name: '', color: CATEGORY_COLORS[0] })
+  const [values, setValues] = useState({
+    name: '',
+    color: CATEGORY_COLORS[0],
+    icon: getDefaultCategoryIcon(),
+  })
   const [errors, setErrors] = useState({})
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -17,7 +25,11 @@ export default function CategoriesScreen() {
       return
     }
     dispatch({ type: 'ADD_CATEGORY', values })
-    setValues({ name: '', color: CATEGORY_COLORS[0] })
+    setValues({
+      name: '',
+      color: CATEGORY_COLORS[0],
+      icon: getDefaultCategoryIcon(),
+    })
     setErrors({})
   }
 
@@ -32,14 +44,34 @@ export default function CategoriesScreen() {
           <label className="form-label" htmlFor="category-name">
             Name
           </label>
-          <input
-            id="category-name"
-            type="text"
-            value={values.name}
-            onChange={(event) => setValues((prev) => ({ ...prev, name: event.target.value }))}
-            placeholder="Category name"
-          />
+          <div className="category-name-row">
+            <span className="icon-preview" aria-hidden="true">
+              {values.icon}
+            </span>
+            <input
+              id="category-name"
+              type="text"
+              value={values.name}
+              onChange={(event) =>
+                setValues((prev) => ({ ...prev, name: event.target.value }))
+              }
+              placeholder="Category name"
+            />
+          </div>
           {errors.name ? <span className="form-error">{errors.name}</span> : null}
+        </div>
+        <div className="form-field">
+          <span className="form-label">Icon</span>
+          <div className="icon-picker-row">
+            <button
+              className="btn btn-secondary"
+              type="button"
+              onClick={() => setPickerOpen(true)}
+            >
+              Choose icon
+            </button>
+          </div>
+          {errors.icon ? <span className="form-error">{errors.icon}</span> : null}
         </div>
         <div className="form-field">
           <span className="form-label">Color</span>
@@ -62,6 +94,15 @@ export default function CategoriesScreen() {
         </button>
       </form>
 
+      <EmojiPickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelect={(icon) => {
+          setValues((prev) => ({ ...prev, icon }))
+          setPickerOpen(false)
+        }}
+      />
+
       <div className="agenda">
         {categories.map((category) => (
           <div
@@ -71,11 +112,13 @@ export default function CategoriesScreen() {
           >
             <div className="appointment-accent" />
             <div className="appointment-body">
-              <h3 className="appointment-title">{category.name}</h3>
-              <div className="category-pill">
-                <span className="dot" />
-                <span>{category.color}</span>
-              </div>
+              <h3 className="appointment-title">
+                <span className="emoji-inline">
+                  <span>{category.icon}</span>
+                  <span>{category.name}</span>
+                </span>
+              </h3>
+              <CategoryPill name={category.color} />
             </div>
           </div>
         ))}

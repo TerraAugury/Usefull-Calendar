@@ -1,12 +1,5 @@
 import { DEFAULT_FILTERS } from './constants'
-
-function compareDateTime(a, b) {
-  const aKey = `${a.date}T${a.startTime}`
-  const bKey = `${b.date}T${b.startTime}`
-  if (aKey < bKey) return -1
-  if (aKey > bKey) return 1
-  return 0
-}
+import { getDateKeyFromUtcMs } from './dates'
 
 export function applyFilters(appointments, filters) {
   const search = filters.search.trim().toLowerCase()
@@ -35,41 +28,37 @@ export function applyFilters(appointments, filters) {
   })
 }
 
-export function sortAppointments(appointments, categories, sortKey) {
-  const categoryLookup = new Map(
-    categories.map((category) => [category.id, category.name.toLowerCase()]),
-  )
-  const sorted = [...appointments]
-  sorted.sort((a, b) => {
-    const primary = compareDateTime(a, b)
-    if (sortKey === 'date-desc') return -primary
-    if (sortKey === 'category') {
-      const dateCompare = primary
-      if (dateCompare !== 0) return dateCompare
-      const aName = categoryLookup.get(a.categoryId) ?? ''
-      const bName = categoryLookup.get(b.categoryId) ?? ''
-      if (aName < bName) return -1
-      if (aName > bName) return 1
-      return 0
+export function splitAndSortAppointments(appointments, now = new Date()) {
+  const upcoming = []
+  const past = []
+  appointments.forEach((appointment) => {
+    if (!Number.isFinite(appointment.startUtcMs)) return
+    if (appointment.startUtcMs >= now.getTime()) {
+      upcoming.push(appointment)
+    } else {
+      past.push(appointment)
     }
-    if (sortKey === 'created') {
-      const dateCompare = primary
-      if (dateCompare !== 0) return dateCompare
-      if (a.createdAt < b.createdAt) return -1
-      if (a.createdAt > b.createdAt) return 1
-      return 0
-    }
-    return primary
   })
-  return sorted
+  upcoming.sort((a, b) => {
+    return a.startUtcMs - b.startUtcMs
+  })
+  past.sort((a, b) => {
+    return b.startUtcMs - a.startUtcMs
+  })
+  return { upcoming, past }
 }
 
 export function groupByDate(appointments) {
   const groups = []
   let current = null
   appointments.forEach((appointment) => {
-    if (appointment.date !== current) {
-      current = appointment.date
+    const key = getDateKeyFromUtcMs(
+      appointment.startUtcMs,
+      appointment.timeMode,
+      appointment.timeZone,
+    )
+    if (key !== current) {
+      current = key
       groups.push({ date: current, items: [] })
     }
     groups[groups.length - 1].items.push(appointment)
@@ -82,7 +71,6 @@ export function areFiltersActive(filters) {
     filters.search.trim() !== DEFAULT_FILTERS.search ||
     filters.categoryId !== DEFAULT_FILTERS.categoryId ||
     filters.dateFrom !== DEFAULT_FILTERS.dateFrom ||
-    filters.dateTo !== DEFAULT_FILTERS.dateTo ||
-    filters.sort !== DEFAULT_FILTERS.sort
+    filters.dateTo !== DEFAULT_FILTERS.dateTo
   )
 }

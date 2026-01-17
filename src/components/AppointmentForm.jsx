@@ -5,15 +5,21 @@ export default function AppointmentForm({
   onChange,
   onSubmit,
   submitLabel,
+  submitDisabled = false,
+  showTimeZone = false,
+  timeZones = [],
   onCancel,
+  showActions = true,
+  formId,
 }) {
   const handleSubmit = (event) => {
     event.preventDefault()
+    if (submitDisabled) return
     onSubmit()
   }
 
   return (
-    <form className="form" onSubmit={handleSubmit}>
+    <form className="form" id={formId} onSubmit={handleSubmit}>
       <div className="form-field">
         <label className="form-label" htmlFor="title">
           Title
@@ -53,7 +59,7 @@ export default function AppointmentForm({
             <option value="">Select category</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
-                {category.name}
+                {category.icon ? `${category.icon} ${category.name}` : category.name}
               </option>
             ))}
           </select>
@@ -94,6 +100,30 @@ export default function AppointmentForm({
         </div>
       </div>
 
+      {showTimeZone ? (
+        <div className="form-field">
+          <label className="form-label" htmlFor="timeZone">
+            Timezone
+          </label>
+          <select
+            id="timeZone"
+            value={values.timeZone}
+            onChange={(event) => onChange({ timeZone: event.target.value })}
+          >
+            <option value="">Select timezone</option>
+            {timeZones.map((zone) => (
+              <option key={zone} value={zone}>
+                {zone}
+              </option>
+            ))}
+          </select>
+          {errors.timeZone ? (
+            <span className="form-error">{errors.timeZone}</span>
+          ) : null}
+          <p className="helper-text">Time is stored in the selected timezone.</p>
+        </div>
+      ) : null}
+
       <div className="form-field">
         <label className="form-label" htmlFor="location">
           Location
@@ -119,16 +149,18 @@ export default function AppointmentForm({
         />
       </div>
 
-      <div className="button-row">
-        <button className="btn btn-primary" type="submit">
-          {submitLabel}
-        </button>
-        {onCancel ? (
-          <button className="btn btn-secondary" type="button" onClick={onCancel}>
-            Cancel
+      {showActions ? (
+        <div className="button-row">
+          <button className="btn btn-primary" type="submit" disabled={submitDisabled}>
+            {submitLabel}
           </button>
-        ) : null}
-      </div>
+          {onCancel ? (
+            <button className="btn btn-secondary" type="button" onClick={onCancel}>
+              Cancel
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </form>
   )
 }

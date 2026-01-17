@@ -10,6 +10,7 @@ export default function ConfirmDialog({
   onConfirm,
   destructive = false,
 }) {
+  const descriptionText = description ?? 'Confirm this action.'
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -23,8 +24,14 @@ export default function ConfirmDialog({
               </button>
             </Dialog.Close>
           </div>
-          {description ? <p>{description}</p> : null}
-          <div className="button-row">
+          <div className="dialog-body">
+            <Dialog.Description
+              className={description ? 'dialog-description' : 'sr-only'}
+            >
+              {descriptionText}
+            </Dialog.Description>
+          </div>
+          <div className="dialog-footer button-row">
             <button
               className={`btn ${destructive ? 'btn-destructive' : 'btn-primary'}`}
               type="button"

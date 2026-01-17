@@ -1,18 +1,17 @@
 import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { IconChevronDown, IconClose, IconMenu } from './Icons'
+import { IconClose, IconMenu } from './Icons'
 
-const sortOptions = [
-  { value: 'date-asc', label: 'Date (asc)' },
-  { value: 'date-desc', label: 'Date (desc)' },
-  { value: 'category', label: 'Category' },
-  { value: 'created', label: 'Created at' },
-]
-
-export default function FilterDrawer({ filters, categories, onChange, onReset, active }) {
+export default function FilterDrawer({
+  filters,
+  categories,
+  onChange,
+  onReset,
+  active,
+  showPast,
+  onToggleShowPast,
+}) {
   const [open, setOpen] = useState(false)
-  const currentSort = sortOptions.find((option) => option.value === filters.sort)
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
@@ -33,6 +32,9 @@ export default function FilterDrawer({ filters, categories, onChange, onReset, a
               </button>
             </Dialog.Close>
           </div>
+          <Dialog.Description className="sr-only">
+            Filter appointments by search, category, date range, and past visibility.
+          </Dialog.Description>
 
           <div className="form-field">
             <label className="form-label" htmlFor="search">
@@ -59,7 +61,7 @@ export default function FilterDrawer({ filters, categories, onChange, onReset, a
               <option value="all">All categories</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
-                  {category.name}
+                  {category.icon ? `${category.icon} ${category.name}` : category.name}
                 </option>
               ))}
             </select>
@@ -91,28 +93,15 @@ export default function FilterDrawer({ filters, categories, onChange, onReset, a
           </div>
 
           <div className="form-field">
-            <span className="form-label">Sort</span>
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger asChild>
-                <button className="btn btn-secondary" type="button">
-                  {currentSort?.label ?? 'Sort'}
-                  <IconChevronDown className="tab-icon" />
-                </button>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content className="menu-content" sideOffset={6}>
-                  {sortOptions.map((option) => (
-                    <DropdownMenu.Item
-                      key={option.value}
-                      className="menu-item"
-                      onSelect={() => onChange({ sort: option.value })}
-                    >
-                      {option.label}
-                    </DropdownMenu.Item>
-                  ))}
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
-            </DropdownMenu.Root>
+            <span className="form-label">Past appointments</span>
+            <button
+              className="btn btn-secondary"
+              type="button"
+              aria-pressed={showPast}
+              onClick={() => onToggleShowPast(!showPast)}
+            >
+              {showPast ? 'Hide past appointments' : 'Show past appointments'}
+            </button>
           </div>
 
           <button className="btn btn-secondary" type="button" onClick={onReset}>

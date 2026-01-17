@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
+import { getDefaultCategoryIcon } from '../data/sampleData'
 import { STATUS_OPTIONS } from '../utils/constants'
 import { formatDateLabel, formatDateTime, formatTimeRange } from '../utils/dates'
 import { IconClose } from './Icons'
@@ -11,6 +12,8 @@ const statusLabels = {
   cancelled: 'Cancelled',
 }
 
+const DEFAULT_ICON = getDefaultCategoryIcon()
+
 export default function DetailsDialog({
   open,
   onOpenChange,
@@ -21,8 +24,14 @@ export default function DetailsDialog({
   onStatusChange,
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const statusId = useId()
 
   if (!appointment) return null
+  const timeLabel = formatTimeRange(appointment.startTime, appointment.endTime)
+  const zoneLabel =
+    appointment.timeMode === 'timezone' && appointment.timeZone
+      ? ` (${appointment.timeZone})`
+      : ''
 
   return (
     <>
@@ -38,56 +47,76 @@ export default function DetailsDialog({
                 </button>
               </Dialog.Close>
             </div>
+            <Dialog.Description className="sr-only">
+              Appointment details and actions.
+            </Dialog.Description>
 
-            <div className="details-grid">
-              <div className="detail-row">
-                <span className="detail-label">Date</span>
-                <span>{formatDateLabel(appointment.date)}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Time</span>
-                <span>{formatTimeRange(appointment.startTime, appointment.endTime)}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Category</span>
-                <span>{category?.name ?? 'Unassigned'}</span>
-              </div>
-              {appointment.location ? (
+            <div className="dialog-body">
+              <div className="details-grid">
                 <div className="detail-row">
-                  <span className="detail-label">Location</span>
-                  <span>{appointment.location}</span>
+                  <span className="detail-label">Date</span>
+                  <span>{formatDateLabel(appointment.date)}</span>
                 </div>
-              ) : null}
-              {appointment.notes ? (
                 <div className="detail-row">
-                  <span className="detail-label">Notes</span>
-                  <span>{appointment.notes}</span>
+                  <span className="detail-label">Time</span>
+                  <span>
+                    {timeLabel}
+                    {zoneLabel}
+                  </span>
                 </div>
-              ) : null}
-              <div className="detail-row">
-                <span className="detail-label">Status</span>
-                <select
-                  value={appointment.status}
-                  onChange={(event) => onStatusChange(event.target.value)}
-                >
-                  {STATUS_OPTIONS.map((status) => (
-                    <option key={status} value={status}>
-                      {statusLabels[status]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Created</span>
-                <span>{formatDateTime(appointment.createdAt)}</span>
-              </div>
-              <div className="detail-row">
-                <span className="detail-label">Updated</span>
-                <span>{formatDateTime(appointment.updatedAt)}</span>
+                {appointment.timeMode === 'timezone' && appointment.timeZone ? (
+                  <div className="detail-row">
+                    <span className="detail-label">Timezone</span>
+                    <span>{appointment.timeZone}</span>
+                  </div>
+                ) : null}
+                <div className="detail-row">
+                  <span className="detail-label">Category</span>
+                  <span className="emoji-inline">
+                    <span>{category?.icon ?? DEFAULT_ICON}</span>
+                    <span>{category?.name ?? 'Unassigned'}</span>
+                  </span>
+                </div>
+                {appointment.location ? (
+                  <div className="detail-row">
+                    <span className="detail-label">Location</span>
+                    <span>{appointment.location}</span>
+                  </div>
+                ) : null}
+                {appointment.notes ? (
+                  <div className="detail-row">
+                    <span className="detail-label">Notes</span>
+                    <span>{appointment.notes}</span>
+                  </div>
+                ) : null}
+                <div className="detail-row">
+                  <label className="detail-label" htmlFor={statusId}>
+                    Status
+                  </label>
+                  <select
+                    id={statusId}
+                    value={appointment.status}
+                    onChange={(event) => onStatusChange(event.target.value)}
+                  >
+                    {STATUS_OPTIONS.map((status) => (
+                      <option key={status} value={status}>
+                        {statusLabels[status]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Created</span>
+                  <span>{formatDateTime(appointment.createdAt)}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Updated</span>
+                  <span>{formatDateTime(appointment.updatedAt)}</span>
+                </div>
               </div>
             </div>
 
-            <div className="button-row">
+            <div className="dialog-footer button-row">
               <button className="btn btn-secondary" type="button" onClick={onEdit}>
                 Edit
               </button>

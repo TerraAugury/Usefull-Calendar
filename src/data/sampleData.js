@@ -1,10 +1,45 @@
+import { buildUtcFields } from '../utils/dates'
+
+const ICONS = {
+  general: '\u{1F5D3}\uFE0F',
+  doctors: '\u{1F3E5}',
+  house: '\u{1F3E0}',
+  friends: '\u{1F465}',
+  work: '\u{1F4BC}',
+  default: '\u{1F3F7}\uFE0F',
+}
+
 const CATEGORY_SEED = [
-  { id: 'cat_default_general', name: 'General', color: 'blue' },
-  { id: 'cat_default_doctors', name: 'Doctors', color: 'red' },
-  { id: 'cat_default_house', name: 'House', color: 'orange' },
-  { id: 'cat_default_friends', name: 'Friends', color: 'green' },
-  { id: 'cat_default_work', name: 'Work', color: 'indigo' },
+  { id: 'cat_default_general', name: 'General', color: 'blue', icon: ICONS.general },
+  { id: 'cat_default_doctors', name: 'Doctors', color: 'red', icon: ICONS.doctors },
+  { id: 'cat_default_house', name: 'House', color: 'orange', icon: ICONS.house },
+  { id: 'cat_default_friends', name: 'Friends', color: 'green', icon: ICONS.friends },
+  { id: 'cat_default_work', name: 'Work', color: 'indigo', icon: ICONS.work },
 ]
+
+const DEFAULT_CATEGORY_ICON = ICONS.default
+
+export function getCategoryIconForName(name) {
+  const normalized = name?.trim().toLowerCase()
+  switch (normalized) {
+    case 'general':
+      return ICONS.general
+    case 'doctors':
+      return ICONS.doctors
+    case 'house':
+      return ICONS.house
+    case 'friends':
+      return ICONS.friends
+    case 'work':
+      return ICONS.work
+    default:
+      return DEFAULT_CATEGORY_ICON
+  }
+}
+
+export function getDefaultCategoryIcon() {
+  return DEFAULT_CATEGORY_ICON
+}
 
 function formatDate(date) {
   const year = date.getFullYear()
@@ -41,6 +76,7 @@ export function getSampleAppointments(categories, now = new Date()) {
   const base = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const date = (offset) => formatDate(addDays(base, offset))
   const createdAt = (offset, time) => localISO(base, offset, time)
+  const timeMode = 'local'
 
   const generalId = findCategoryId(categories, 'general')
   const doctorsId = findCategoryId(categories, 'doctors')
@@ -48,7 +84,7 @@ export function getSampleAppointments(categories, now = new Date()) {
   const friendsId = findCategoryId(categories, 'friends')
   const workId = findCategoryId(categories, 'work')
 
-  return [
+  const items = [
     {
       id: 'apt_sample_01',
       title: 'Budget review',
@@ -246,4 +282,18 @@ export function getSampleAppointments(categories, now = new Date()) {
       updatedAt: createdAt(10, '09:00'),
     },
   ]
+
+  return items.map((appointment) => {
+    const { startUtcMs, endUtcMs } = buildUtcFields({
+      date: appointment.date,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime,
+      timeMode,
+    })
+    const next = { ...appointment, timeMode, startUtcMs }
+    if (appointment.endTime) {
+      next.endUtcMs = endUtcMs
+    }
+    return next
+  })
 }

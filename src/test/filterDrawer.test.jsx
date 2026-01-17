@@ -1,16 +1,16 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import CalendarScreen from '../screens/CalendarScreen'
 import { AppStateProvider } from '../state/AppState'
 import { DEFAULT_FILTERS } from '../utils/constants'
 
 const baseState = {
-  categories: [{ id: 'cat-1', name: 'General', color: 'blue' }],
+  categories: [{ id: 'cat-1', name: 'General', color: 'blue', icon: '\u{1F5D3}\uFE0F' }],
   appointments: [],
-  preferences: { theme: 'system' },
+  preferences: { theme: 'system', showPast: false, timeMode: 'local' },
   ui: {
     tab: 'calendar',
-    filters: { ...DEFAULT_FILTERS, search: 'doctor' },
+    filters: { ...DEFAULT_FILTERS },
     addDraft: {
       title: '',
       date: '',
@@ -34,11 +34,28 @@ describe('Filter drawer', () => {
       </AppStateProvider>,
     )
 
-    await user.click(screen.getByLabelText(/open filters/i))
-    const searchInput = screen.getByLabelText(/search/i)
-    expect(searchInput).toHaveValue('doctor')
+    const trigger = screen.getByLabelText(/open filters/i)
+    expect(trigger.querySelector('.badge-dot')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: /reset filters/i }))
-    expect(searchInput).toHaveValue('')
+    await act(async () => {
+      await user.click(trigger)
+    })
+    const searchInput = await screen.findByLabelText(/search/i)
+    await act(async () => {
+      await user.type(searchInput, 'doctor')
+    })
+    await waitFor(() => {
+      expect(trigger.querySelector('.badge-dot')).not.toBeNull()
+    })
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /reset filters/i }))
+    })
+    await waitFor(() => expect(searchInput).toHaveValue(''))
+    await waitFor(() => expect(trigger.querySelector('.badge-dot')).toBeNull())
+    await act(async () => {
+      await user.keyboard('{Escape}')
+    })
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 })

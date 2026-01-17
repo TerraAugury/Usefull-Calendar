@@ -1,4 +1,10 @@
-import { CATEGORY_COLORS, STATUS_OPTIONS } from './constants'
+import {
+  CATEGORY_COLORS,
+  EUROPE_TIMEZONES,
+  STATUS_OPTIONS,
+  TIME_MODES,
+} from './constants'
+import { buildUtcFields } from './dates'
 
 export function isValidColor(color) {
   return CATEGORY_COLORS.includes(color)
@@ -27,6 +33,26 @@ export function isValidTimeRange(startTime, endTime) {
   return end >= start
 }
 
+export function isValidTimeMode(value) {
+  return TIME_MODES.includes(value)
+}
+
+export function isValidTimeZone(value) {
+  return EUROPE_TIMEZONES.includes(value)
+}
+
+export function isAppointmentStartInPast(values, now = new Date(), timeMode = 'local') {
+  const { startUtcMs } = buildUtcFields({
+    date: values.date,
+    startTime: values.startTime,
+    endTime: values.endTime,
+    timeMode,
+    timeZone: values.timeZone,
+  })
+  if (!Number.isFinite(startUtcMs)) return false
+  return startUtcMs < now.getTime()
+}
+
 export function validateCategoryInput(values, existing = []) {
   const errors = {}
   const name = values.name?.trim() ?? ''
@@ -44,10 +70,18 @@ export function validateCategoryInput(values, existing = []) {
   if (!isValidColor(values.color)) {
     errors.color = 'Select a color from the palette.'
   }
+  if (!values.icon || !values.icon.trim()) {
+    errors.icon = 'Select an icon.'
+  }
   return errors
 }
 
-export function validateAppointmentInput(values, categories = []) {
+export function validateAppointmentInput(
+  values,
+  categories = [],
+  now = new Date(),
+  timeMode = 'local',
+) {
   const errors = {}
   if (!values.title?.trim()) {
     errors.title = 'Title is required.'
@@ -63,8 +97,32 @@ export function validateAppointmentInput(values, categories = []) {
   } else if (!categories.some((cat) => cat.id === values.categoryId)) {
     errors.categoryId = 'Select a valid category.'
   }
+  if (timeMode === 'timezone') {
+    if (!values.timeZone) {
+      errors.timeZone = 'Timezone is required.'
+    } else if (!isValidTimeZone(values.timeZone)) {
+      errors.timeZone = 'Select a European timezone.'
+    }
+  }
   if (!isValidTimeRange(values.startTime, values.endTime)) {
     errors.endTime = 'End time must be after start time.'
+  }
+  const { startUtcMs, endUtcMs } = buildUtcFields({
+    date: values.date,
+    startTime: values.startTime,
+    endTime: values.endTime,
+    timeMode,
+    timeZone: values.timeZone,
+  })
+  if (values.endTime && Number.isFinite(startUtcMs)) {
+    if (!Number.isFinite(endUtcMs) || endUtcMs < startUtcMs) {
+      errors.endTime = 'End time must be after start time.'
+    }
+  }
+  if (isAppointmentStartInPast(values, now, timeMode)) {
+    if (!errors.startTime) {
+      errors.startTime = 'Appointments cannot be in the past.'
+    }
   }
   return errors
 }
@@ -75,6 +133,8 @@ export function isValidCategoryShape(item) {
     typeof item === 'object' &&
     typeof item.id === 'string' &&
     typeof item.name === 'string' &&
+    typeof item.icon === 'string' &&
+    item.icon.trim() !== '' &&
     isValidColor(item.color)
   )
 }
@@ -90,12 +150,25 @@ export function isValidAppointmentShape(item, categoryIds = null) {
     'status',
     'createdAt',
     'updatedAt',
+    'timeMode',
   ]
   if (!required.every((key) => typeof item[key] === 'string' && item[key])) {
     return false
   }
+  if (!isValidTimeMode(item.timeMode)) return false
+  if (!Number.isFinite(item.startUtcMs)) return false
+  if (item.timeMode === 'timezone') {
+    if (typeof item.timeZone !== 'string' || !isValidTimeZone(item.timeZone)) {
+      return false
+    }
+  }
   if (!isValidStatus(item.status)) return false
   if (!isValidTimeRange(item.startTime, item.endTime)) return false
+  if (item.endTime) {
+    if (!Number.isFinite(item.endUtcMs) || item.endUtcMs < item.startUtcMs) {
+      return false
+    }
+  }
   if (categoryIds && !categoryIds.has(item.categoryId)) return false
   return true
 }

@@ -1,5 +1,5 @@
 import { DEFAULT_FILTERS, EMPTY_DRAFT } from '../utils/constants'
-import { getDefaultCategories } from '../data/sampleData'
+import { getDefaultCategories, getDefaultCategoryIcon } from '../data/sampleData'
 import { createId } from '../utils/id'
 import { loadStoredData } from '../storage/storage'
 
@@ -16,7 +16,11 @@ export function createInitialState() {
   const stored = loadStoredData()
   const categories = stored.categories ?? buildDefaultCategories()
   const appointments = stored.appointments ?? []
-  const preferences = stored.preferences ?? { theme: 'system' }
+  const preferences = stored.preferences ?? {
+    theme: 'system',
+    showPast: false,
+    timeMode: 'local',
+  }
   return {
     categories,
     appointments,
@@ -107,6 +111,7 @@ export function reducer(state, action) {
         id: createId('cat_'),
         name: action.values.name,
         color: action.values.color,
+        icon: action.values.icon ?? getDefaultCategoryIcon(),
       }
       const categories = [...state.categories, newCategory]
       return {
@@ -169,7 +174,7 @@ export function reducer(state, action) {
         ...state,
         categories,
         appointments: [],
-        preferences: { theme: 'system' },
+        preferences: { theme: 'system', showPast: false, timeMode: 'local' },
         ui: {
           tab: 'calendar',
           filters: { ...DEFAULT_FILTERS },

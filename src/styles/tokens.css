@@ -29,6 +29,7 @@
   --c-green: #30D158;
   --c-orange: #FF9F0A;
   --c-red: #FF453A;
+  --c-red-strong: #E02820;
   --c-purple: #BF5AF2;
   --c-teal: #64D2FF;
   --c-indigo: #5E5CE6;
@@ -36,7 +37,7 @@
   --c-yellow: #FFD60A;
   --c-gray: #8E8E93;
 
-  --brand: var(--c-blue);
+  --brand: #0062E0;
   --content-max: 1000px;
   --tab-height: 64px;
   --header-height: 56px;

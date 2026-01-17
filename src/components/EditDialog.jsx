@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { validateAppointmentInput } from '../utils/validation'
+import { EUROPE_TIMEZONES } from '../utils/constants'
+import { buildUtcFields } from '../utils/dates'
+import {
+  isAppointmentStartInPast,
+  validateAppointmentInput,
+} from '../utils/validation'
 import AppointmentForm from './AppointmentForm'
 import { IconClose } from './Icons'
 
@@ -9,11 +14,13 @@ export default function EditDialog({
   onOpenChange,
   appointment,
   categories,
+  preferences,
   onSave,
   onCancel,
 }) {
   const [values, setValues] = useState(null)
   const [errors, setErrors] = useState({})
+  const formId = 'edit-appointment-form'
 
   useEffect(() => {
     if (appointment) {
@@ -25,20 +32,46 @@ export default function EditDialog({
         categoryId: appointment.categoryId ?? '',
         location: appointment.location ?? '',
         notes: appointment.notes ?? '',
+        timeZone: appointment.timeZone ?? '',
       })
       setErrors({})
     }
   }, [appointment])
 
   if (!appointment || !values) return null
+  const now = new Date()
+  const timeMode = appointment.timeMode ?? preferences?.timeMode ?? 'local'
+  const startInPast = isAppointmentStartInPast(values, now, timeMode)
+  const visibleErrors = { ...errors }
+  if (startInPast && !visibleErrors.startTime) {
+    visibleErrors.startTime = 'Appointments cannot be in the past.'
+  }
 
   const handleSubmit = () => {
-    const nextErrors = validateAppointmentInput(values, categories)
+    const nextErrors = validateAppointmentInput(values, categories, now, timeMode)
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors)
       return
     }
-    onSave(values)
+    const { startUtcMs, endUtcMs } = buildUtcFields({
+      date: values.date,
+      startTime: values.startTime,
+      endTime: values.endTime,
+      timeMode,
+      timeZone: values.timeZone,
+    })
+    if (!Number.isFinite(startUtcMs)) {
+      setErrors({ startTime: 'Appointments cannot be in the past.' })
+      return
+    }
+    const payload = { ...values, timeMode, startUtcMs }
+    if (values.endTime) {
+      payload.endUtcMs = endUtcMs
+    }
+    if (timeMode !== 'timezone') {
+      delete payload.timeZone
+    }
+    onSave(payload)
   }
 
   return (
@@ -54,15 +87,37 @@ export default function EditDialog({
               </button>
             </Dialog.Close>
           </div>
-          <AppointmentForm
-            values={values}
-            errors={errors}
-            categories={categories}
-            onChange={(patch) => setValues((prev) => ({ ...prev, ...patch }))}
-            onSubmit={handleSubmit}
-            submitLabel="Save changes"
-            onCancel={onCancel}
-          />
+          <Dialog.Description className="sr-only">
+            Update appointment details and save your changes.
+          </Dialog.Description>
+          <div className="dialog-body">
+            <AppointmentForm
+              values={values}
+              errors={visibleErrors}
+              categories={categories}
+              onChange={(patch) => setValues((prev) => ({ ...prev, ...patch }))}
+              onSubmit={handleSubmit}
+              submitLabel="Save changes"
+              showActions={false}
+              formId={formId}
+              submitDisabled={startInPast}
+              showTimeZone={timeMode === 'timezone'}
+              timeZones={EUROPE_TIMEZONES}
+            />
+          </div>
+          <div className="dialog-footer button-row">
+            <button
+              className="btn btn-primary"
+              type="submit"
+              form={formId}
+              disabled={startInPast}
+            >
+              Save changes
+            </button>
+            <button className="btn btn-secondary" type="button" onClick={onCancel}>
+              Cancel
+            </button>
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

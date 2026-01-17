@@ -1,11 +1,6 @@
-import { applyFilters, groupByDate, sortAppointments } from '../utils/agenda'
+import { applyFilters, groupByDate, splitAndSortAppointments } from '../utils/agenda'
 
 describe('agenda logic', () => {
-  const categories = [
-    { id: 'cat-a', name: 'Home', color: 'green' },
-    { id: 'cat-b', name: 'Work', color: 'blue' },
-  ]
-
   const appointments = [
     {
       id: 'a1',
@@ -19,6 +14,9 @@ describe('agenda logic', () => {
       status: 'planned',
       createdAt: '2026-01-01T08:00:00.000Z',
       updatedAt: '2026-01-01T08:00:00.000Z',
+      timeMode: 'timezone',
+      timeZone: 'Europe/London',
+      startUtcMs: Date.UTC(2026, 0, 10, 9, 0),
     },
     {
       id: 'a2',
@@ -32,6 +30,9 @@ describe('agenda logic', () => {
       status: 'planned',
       createdAt: '2026-01-02T08:00:00.000Z',
       updatedAt: '2026-01-02T08:00:00.000Z',
+      timeMode: 'timezone',
+      timeZone: 'Europe/London',
+      startUtcMs: Date.UTC(2026, 0, 11, 11, 0),
     },
     {
       id: 'a3',
@@ -45,6 +46,25 @@ describe('agenda logic', () => {
       status: 'planned',
       createdAt: '2026-01-03T08:00:00.000Z',
       updatedAt: '2026-01-03T08:00:00.000Z',
+      timeMode: 'timezone',
+      timeZone: 'Europe/London',
+      startUtcMs: Date.UTC(2026, 0, 10, 12, 0),
+    },
+    {
+      id: 'a4',
+      title: 'Wrap-up',
+      date: '2026-01-12',
+      startTime: '08:00',
+      endTime: '',
+      categoryId: 'cat-b',
+      location: '',
+      notes: '',
+      status: 'planned',
+      createdAt: '2026-01-04T08:00:00.000Z',
+      updatedAt: '2026-01-04T08:00:00.000Z',
+      timeMode: 'timezone',
+      timeZone: 'Europe/London',
+      startUtcMs: Date.UTC(2026, 0, 12, 8, 0),
     },
   ]
 
@@ -54,22 +74,41 @@ describe('agenda logic', () => {
       categoryId: 'cat-a',
       dateFrom: '',
       dateTo: '',
-      sort: 'date-asc',
     })
     expect(filtered).toHaveLength(1)
     expect(filtered[0].id).toBe('a2')
   })
 
-  it('sorts by date descending', () => {
-    const sorted = sortAppointments(appointments, categories, 'date-desc')
-    expect(sorted[0].date).toBe('2026-01-11')
+  it('filters by date range', () => {
+    const filtered = applyFilters(appointments, {
+      search: '',
+      categoryId: 'all',
+      dateFrom: '2026-01-11',
+      dateTo: '2026-01-11',
+    })
+    expect(filtered).toHaveLength(1)
+    expect(filtered[0].id).toBe('a2')
+  })
+
+  it('splits and sorts upcoming and past using now', () => {
+    const now = new Date(Date.UTC(2026, 0, 11, 10, 0))
+    const { upcoming, past } = splitAndSortAppointments(appointments, now)
+    expect(upcoming.map((item) => item.id)).toEqual(['a2', 'a4'])
+    expect(past.map((item) => item.id)).toEqual(['a3', 'a1'])
+  })
+
+  it('starts with the next upcoming appointment', () => {
+    const now = new Date(Date.UTC(2026, 0, 11, 10, 0))
+    const { upcoming } = splitAndSortAppointments(appointments, now)
+    expect(upcoming[0].id).toBe('a2')
   })
 
   it('groups by date', () => {
-    const sorted = sortAppointments(appointments, categories, 'date-asc')
-    const grouped = groupByDate(sorted)
+    const now = new Date(Date.UTC(2026, 0, 11, 10, 0))
+    const { upcoming } = splitAndSortAppointments(appointments, now)
+    const grouped = groupByDate(upcoming)
     expect(grouped).toHaveLength(2)
-    expect(grouped[0].date).toBe('2026-01-10')
-    expect(grouped[0].items).toHaveLength(2)
+    expect(grouped[0].date).toBe('2026-01-11')
+    expect(grouped[0].items).toHaveLength(1)
   })
 })

@@ -2,6 +2,9 @@ import {
   isValidAppointmentShape,
   isValidCategoryShape,
 } from '../utils/validation'
+import { getCategoryIconForName } from '../data/sampleData'
+import { DEFAULT_TIME_ZONE, EUROPE_TIMEZONES, TIME_MODES } from '../utils/constants'
+import { buildUtcFields } from '../utils/dates'
 
 const STORAGE_KEYS = {
   categories: 'app_categories',
@@ -22,10 +25,82 @@ function safeParse(value) {
 
 function normalizePreferences(value) {
   if (!value || typeof value !== 'object') {
-    return { theme: 'system' }
+    return { theme: 'system', showPast: false, timeMode: 'local' }
   }
   const theme = THEMES.includes(value.theme) ? value.theme : 'system'
-  return { theme }
+  const showPast = typeof value.showPast === 'boolean' ? value.showPast : false
+  const timeMode = TIME_MODES.includes(value.timeMode) ? value.timeMode : 'local'
+  return { theme, showPast, timeMode }
+}
+
+function normalizeCategories(rawCategories) {
+  if (!Array.isArray(rawCategories)) return null
+  let changed = false
+  const categories = rawCategories.map((category) => {
+    if (!category || typeof category !== 'object') {
+      changed = true
+      return category
+    }
+    const icon =
+      typeof category.icon === 'string' && category.icon.trim()
+        ? category.icon
+        : getCategoryIconForName(category.name)
+    if (icon !== category.icon) {
+      changed = true
+    }
+    return { ...category, icon }
+  })
+  return { categories, changed }
+}
+
+function normalizeAppointments(rawAppointments, preferences) {
+  if (!Array.isArray(rawAppointments)) return null
+  let changed = false
+  const fallbackMode = TIME_MODES.includes(preferences?.timeMode)
+    ? preferences.timeMode
+    : 'local'
+  const appointments = rawAppointments.map((appointment) => {
+    if (!appointment || typeof appointment !== 'object') {
+      changed = true
+      return appointment
+    }
+    const timeMode = TIME_MODES.includes(appointment.timeMode)
+      ? appointment.timeMode
+      : fallbackMode
+    if (timeMode !== appointment.timeMode) changed = true
+    let timeZone = appointment.timeZone
+    if (timeMode === 'timezone') {
+      if (
+        typeof timeZone !== 'string' ||
+        !timeZone.trim() ||
+        !EUROPE_TIMEZONES.includes(timeZone)
+      ) {
+        timeZone = DEFAULT_TIME_ZONE
+        changed = true
+      }
+    }
+    const { startUtcMs, endUtcMs } = buildUtcFields({
+      date: appointment.date,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime,
+      timeMode,
+      timeZone,
+    })
+    let next = { ...appointment, timeMode, timeZone, startUtcMs }
+    if (appointment.endTime) {
+      next.endUtcMs = endUtcMs
+    } else if ('endUtcMs' in appointment) {
+      changed = true
+    }
+    if (appointment.startUtcMs !== startUtcMs) {
+      changed = true
+    }
+    if (appointment.endTime && appointment.endUtcMs !== endUtcMs) {
+      changed = true
+    }
+    return next
+  })
+  return { appointments, changed }
 }
 
 export function loadStoredData() {
@@ -37,25 +112,36 @@ export function loadStoredData() {
   const rawAppointments = safeParse(localStorage.getItem(STORAGE_KEYS.appointments))
   const rawPreferences = safeParse(localStorage.getItem(STORAGE_KEYS.preferences))
 
+  const normalized = normalizeCategories(rawCategories)
   const categories =
-    Array.isArray(rawCategories) && rawCategories.every(isValidCategoryShape)
-      ? rawCategories
+    normalized && normalized.categories.every(isValidCategoryShape)
+      ? normalized.categories
       : null
 
   const categoryIds = categories
     ? new Set(categories.map((category) => category.id))
     : null
 
+  const preferences = normalizePreferences(rawPreferences)
+  const normalizedAppointments = normalizeAppointments(rawAppointments, preferences)
   const appointments =
-    Array.isArray(rawAppointments) &&
+    normalizedAppointments &&
     categoryIds &&
-    rawAppointments.every((appointment) =>
+    normalizedAppointments.appointments.every((appointment) =>
       isValidAppointmentShape(appointment, categoryIds),
     )
-      ? rawAppointments
+      ? normalizedAppointments.appointments
       : null
 
-  const preferences = normalizePreferences(rawPreferences)
+  if (categories && normalized?.changed) {
+    localStorage.setItem(STORAGE_KEYS.categories, JSON.stringify(categories))
+  }
+  if (appointments && normalizedAppointments?.changed) {
+    localStorage.setItem(STORAGE_KEYS.appointments, JSON.stringify(appointments))
+  }
+  if (rawPreferences && JSON.stringify(preferences) !== JSON.stringify(rawPreferences)) {
+    localStorage.setItem(STORAGE_KEYS.preferences, JSON.stringify(preferences))
+  }
 
   return { categories, appointments, preferences }
 }
@@ -80,19 +166,25 @@ export function parseImport(text) {
   if (!parsed || typeof parsed !== 'object') return null
   const { categories, appointments, preferences } = parsed
   if (!Array.isArray(categories) || !Array.isArray(appointments)) return null
-  if (!categories.every(isValidCategoryShape)) return null
-  const categoryIds = new Set(categories.map((category) => category.id))
+  const normalized = normalizeCategories(categories)
+  if (!normalized || !normalized.categories.every(isValidCategoryShape)) return null
+  const normalizedPreferences = normalizePreferences(preferences)
+  const normalizedAppointments = normalizeAppointments(
+    appointments,
+    normalizedPreferences,
+  )
+  if (!normalizedAppointments) return null
+  const categoryIds = new Set(normalized.categories.map((category) => category.id))
   if (
-    !appointments.every((appointment) =>
+    !normalizedAppointments.appointments.every((appointment) =>
       isValidAppointmentShape(appointment, categoryIds),
     )
   ) {
     return null
   }
-  const normalizedPreferences = normalizePreferences(preferences)
   return {
-    categories,
-    appointments,
+    categories: normalized.categories,
+    appointments: normalizedAppointments.appointments,
     preferences: normalizedPreferences,
   }
 }
