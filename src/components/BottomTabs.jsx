@@ -3,7 +3,7 @@ import { IconCalendar, IconPlus, IconSettings, IconTag } from './Icons'
 
 const tabs = [
   { id: 'calendar', label: 'Calendar', icon: IconCalendar },
-  { id: 'add', label: '+', icon: IconPlus, isAdd: true, aria: 'Add appointment' },
+  { id: 'add', label: 'Add', icon: IconPlus, isAdd: true, aria: 'Add appointment' },
   { id: 'categories', label: 'Categories', icon: IconTag },
   { id: 'settings', label: 'Settings', icon: IconSettings },
 ]

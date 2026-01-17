@@ -1,10 +1,10 @@
 import {
   CATEGORY_COLORS,
-  EUROPE_TIMEZONES,
   STATUS_OPTIONS,
+  TIMEZONE_OPTIONS,
   TIME_MODES,
 } from './constants'
-import { buildUtcFields } from './dates'
+import { buildUtcFields, timeStringToMinutes } from './dates'
 
 export function isValidColor(color) {
   return CATEGORY_COLORS.includes(color)
@@ -18,17 +18,10 @@ export function normalizeName(value) {
   return value.trim().toLowerCase()
 }
 
-function toMinutes(value) {
-  if (!value) return null
-  const [h, m] = value.split(':').map(Number)
-  if (Number.isNaN(h) || Number.isNaN(m)) return null
-  return h * 60 + m
-}
-
 export function isValidTimeRange(startTime, endTime) {
   if (!endTime) return true
-  const start = toMinutes(startTime)
-  const end = toMinutes(endTime)
+  const start = timeStringToMinutes(startTime)
+  const end = timeStringToMinutes(endTime)
   if (start === null || end === null) return false
   return end >= start
 }
@@ -38,7 +31,7 @@ export function isValidTimeMode(value) {
 }
 
 export function isValidTimeZone(value) {
-  return EUROPE_TIMEZONES.includes(value)
+  return TIMEZONE_OPTIONS.some((zone) => zone.value === value)
 }
 
 export function isAppointmentStartInPast(values, now = new Date(), timeMode = 'local') {

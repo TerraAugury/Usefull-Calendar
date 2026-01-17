@@ -49,5 +49,6 @@ describe('import/export', () => {
     const parsed = parseImport(legacy)
     expect(parsed.categories[0].icon).toBe('\u{1F4BC}')
     expect(parsed.preferences.showPast).toBe(false)
+    expect(parsed.preferences.calendarViewMode).toBe('agenda')
   })
 })

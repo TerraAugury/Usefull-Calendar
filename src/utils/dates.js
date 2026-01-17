@@ -25,6 +25,64 @@ export function formatDateTime(value) {
   })
 }
 
+export function timeStringToMinutes(value) {
+  if (!value) return null
+  const [hour, minute] = value.split(':').map(Number)
+  if (Number.isNaN(hour) || Number.isNaN(minute)) return null
+  return hour * 60 + minute
+}
+
+export function formatDateYYYYMMDD(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return ''
+  return formatDateKey(date.getFullYear(), date.getMonth() + 1, date.getDate())
+}
+
+export function getTodayYYYYMMDD({ mode = 'local', timeZone, now = new Date() } = {}) {
+  if (!(now instanceof Date) || Number.isNaN(now.getTime())) return ''
+  if (mode === 'timezone' && timeZone) {
+    const formatter = getDateFormatter(timeZone)
+    const parts = getPartsMap(formatter, now)
+    const year = Number(parts.year)
+    const month = Number(parts.month)
+    const day = Number(parts.day)
+    if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
+      return ''
+    }
+    return formatDateKey(year, month, day)
+  }
+  return formatDateYYYYMMDD(now)
+}
+
+export function getNowTimeHHMM({
+  mode = 'local',
+  timeZone,
+  now = new Date(),
+  stepMinutes = 1,
+} = {}) {
+  if (!(now instanceof Date) || Number.isNaN(now.getTime())) return ''
+  let hour = null
+  let minute = null
+  if (mode === 'timezone' && timeZone) {
+    const formatter = getDateTimeFormatter(timeZone)
+    const parts = getPartsMap(formatter, now)
+    hour = Number(parts.hour)
+    minute = Number(parts.minute)
+  } else {
+    hour = now.getHours()
+    minute = now.getMinutes()
+  }
+  if (Number.isNaN(hour) || Number.isNaN(minute)) return ''
+  const step = Math.max(1, stepMinutes)
+  const total = hour * 60 + minute
+  const rounded = Math.ceil(total / step) * step
+  const clamped = Math.min(rounded, 24 * 60 - 1)
+  const finalHour = Math.floor(clamped / 60)
+  const finalMinute = clamped % 60
+  const hh = String(finalHour).padStart(2, '0')
+  const mm = String(finalMinute).padStart(2, '0')
+  return `${hh}:${mm}`
+}
+
 export function getLocalDateTime(dateString, timeString) {
   if (!dateString || !timeString) return null
   const [year, month, day] = dateString.split('-').map(Number)

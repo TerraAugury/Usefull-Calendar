@@ -1,8 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import AppointmentForm from '../components/AppointmentForm'
 import { useAppDispatch, useAppState } from '../state/AppState'
-import { EUROPE_TIMEZONES } from '../utils/constants'
-import { buildUtcFields } from '../utils/dates'
+import { TIMEZONE_OPTIONS } from '../utils/constants'
+import {
+  buildUtcFields,
+  getNowTimeHHMM,
+  getTodayYYYYMMDD,
+  timeStringToMinutes,
+} from '../utils/dates'
 import {
   isAppointmentStartInPast,
   validateAppointmentInput,
@@ -14,11 +19,38 @@ export default function AddScreen() {
   const [errors, setErrors] = useState({})
   const now = new Date()
   const timeMode = preferences.timeMode ?? 'local'
+  const timeZone = ui.addDraft.timeZone
+  const today = getTodayYYYYMMDD({ mode: timeMode, timeZone, now })
+  const dateMin = today
+  const isToday = today && ui.addDraft.date === today
+  const timeDisabled = timeMode === 'timezone' && !timeZone
+  const startTimeMin =
+    !timeDisabled && isToday
+      ? getNowTimeHHMM({ mode: timeMode, timeZone, now, stepMinutes: 1 })
+      : ''
+  const endTimeMin = ui.addDraft.startTime || ''
+  const dateBeforeMin = ui.addDraft.date && dateMin && ui.addDraft.date < dateMin
   const startInPast = isAppointmentStartInPast(ui.addDraft, now, timeMode)
+  const submitBlocked = startInPast || dateBeforeMin
   const visibleErrors = { ...errors }
   if (startInPast && !visibleErrors.startTime) {
     visibleErrors.startTime = 'Appointments cannot be in the past.'
   }
+  const dateWarning = dateBeforeMin
+    ? 'Past appointments cannot be saved. Choose a future date/time.'
+    : ''
+
+  useEffect(() => {
+    const startMinutes = timeStringToMinutes(ui.addDraft.startTime)
+    const endMinutes = timeStringToMinutes(ui.addDraft.endTime)
+    if (
+      startMinutes !== null &&
+      endMinutes !== null &&
+      endMinutes < startMinutes
+    ) {
+      dispatch({ type: 'SET_ADD_DRAFT', values: { endTime: '' } })
+    }
+  }, [ui.addDraft.startTime, ui.addDraft.endTime, dispatch])
 
   const handleSubmit = () => {
     const nextErrors = validateAppointmentInput(ui.addDraft, categories, now, timeMode)
@@ -62,9 +94,15 @@ export default function AddScreen() {
         onChange={(values) => dispatch({ type: 'SET_ADD_DRAFT', values })}
         onSubmit={handleSubmit}
         submitLabel="Save appointment"
-        submitDisabled={startInPast}
+        submitDisabled={submitBlocked}
         showTimeZone={timeMode === 'timezone'}
-        timeZones={EUROPE_TIMEZONES}
+        timeZones={TIMEZONE_OPTIONS}
+        dateMin={dateMin}
+        startTimeMin={startTimeMin}
+        endTimeMin={endTimeMin}
+        timeDisabled={timeDisabled}
+        timeDisabledMessage={timeDisabled ? 'Select timezone first.' : ''}
+        dateWarning={dateWarning}
       />
     </section>
   )

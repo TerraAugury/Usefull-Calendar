@@ -20,6 +20,8 @@ export function createInitialState() {
     theme: 'system',
     showPast: false,
     timeMode: 'local',
+    calendarViewMode: 'agenda',
+    calendarGridMode: 'month',
   }
   return {
     categories,
@@ -174,7 +176,13 @@ export function reducer(state, action) {
         ...state,
         categories,
         appointments: [],
-        preferences: { theme: 'system', showPast: false, timeMode: 'local' },
+        preferences: {
+          theme: 'system',
+          showPast: false,
+          timeMode: 'local',
+          calendarViewMode: 'agenda',
+          calendarGridMode: 'month',
+        },
         ui: {
           tab: 'calendar',
           filters: { ...DEFAULT_FILTERS },

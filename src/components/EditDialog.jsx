@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { EUROPE_TIMEZONES } from '../utils/constants'
-import { buildUtcFields } from '../utils/dates'
+import { TIMEZONE_OPTIONS } from '../utils/constants'
+import {
+  buildUtcFields,
+  getNowTimeHHMM,
+  getTodayYYYYMMDD,
+  timeStringToMinutes,
+} from '../utils/dates'
 import {
   isAppointmentStartInPast,
   validateAppointmentInput,
@@ -38,14 +43,38 @@ export default function EditDialog({
     }
   }, [appointment])
 
+  useEffect(() => {
+    if (!values) return
+    const startMinutes = timeStringToMinutes(values.startTime)
+    const endMinutes = timeStringToMinutes(values.endTime)
+    if (startMinutes !== null && endMinutes !== null && endMinutes < startMinutes) {
+      setValues((prev) => ({ ...prev, endTime: '' }))
+    }
+  }, [values?.startTime, values?.endTime])
+
   if (!appointment || !values) return null
   const now = new Date()
   const timeMode = appointment.timeMode ?? preferences?.timeMode ?? 'local'
+  const timeZone = values.timeZone
+  const today = getTodayYYYYMMDD({ mode: timeMode, timeZone, now })
+  const dateMin = today
+  const isToday = today && values.date === today
+  const timeDisabled = timeMode === 'timezone' && !timeZone
+  const startTimeMin =
+    !timeDisabled && isToday
+      ? getNowTimeHHMM({ mode: timeMode, timeZone, now, stepMinutes: 1 })
+      : ''
+  const endTimeMin = values.startTime || ''
+  const dateBeforeMin = values.date && dateMin && values.date < dateMin
   const startInPast = isAppointmentStartInPast(values, now, timeMode)
+  const submitBlocked = startInPast || dateBeforeMin
   const visibleErrors = { ...errors }
   if (startInPast && !visibleErrors.startTime) {
     visibleErrors.startTime = 'Appointments cannot be in the past.'
   }
+  const dateWarning = dateBeforeMin
+    ? 'Past appointments cannot be saved. Choose a future date/time.'
+    : ''
 
   const handleSubmit = () => {
     const nextErrors = validateAppointmentInput(values, categories, now, timeMode)
@@ -100,9 +129,15 @@ export default function EditDialog({
               submitLabel="Save changes"
               showActions={false}
               formId={formId}
-              submitDisabled={startInPast}
+              submitDisabled={submitBlocked}
               showTimeZone={timeMode === 'timezone'}
-              timeZones={EUROPE_TIMEZONES}
+              timeZones={TIMEZONE_OPTIONS}
+              dateMin={dateMin}
+              startTimeMin={startTimeMin}
+              endTimeMin={endTimeMin}
+              timeDisabled={timeDisabled}
+              timeDisabledMessage={timeDisabled ? 'Select timezone first.' : ''}
+              dateWarning={dateWarning}
             />
           </div>
           <div className="dialog-footer button-row">
@@ -110,7 +145,7 @@ export default function EditDialog({
               className="btn btn-primary"
               type="submit"
               form={formId}
-              disabled={startInPast}
+              disabled={submitBlocked}
             >
               Save changes
             </button>

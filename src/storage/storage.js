@@ -1,9 +1,15 @@
 import {
   isValidAppointmentShape,
   isValidCategoryShape,
+  isValidTimeZone,
 } from '../utils/validation'
 import { getCategoryIconForName } from '../data/sampleData'
-import { DEFAULT_TIME_ZONE, EUROPE_TIMEZONES, TIME_MODES } from '../utils/constants'
+import {
+  CALENDAR_GRID_MODES,
+  CALENDAR_VIEW_MODES,
+  DEFAULT_TIME_ZONE,
+  TIME_MODES,
+} from '../utils/constants'
 import { buildUtcFields } from '../utils/dates'
 
 const STORAGE_KEYS = {
@@ -25,12 +31,24 @@ function safeParse(value) {
 
 function normalizePreferences(value) {
   if (!value || typeof value !== 'object') {
-    return { theme: 'system', showPast: false, timeMode: 'local' }
+    return {
+      theme: 'system',
+      showPast: false,
+      timeMode: 'local',
+      calendarViewMode: 'agenda',
+      calendarGridMode: 'month',
+    }
   }
   const theme = THEMES.includes(value.theme) ? value.theme : 'system'
   const showPast = typeof value.showPast === 'boolean' ? value.showPast : false
   const timeMode = TIME_MODES.includes(value.timeMode) ? value.timeMode : 'local'
-  return { theme, showPast, timeMode }
+  const calendarViewMode = CALENDAR_VIEW_MODES.includes(value.calendarViewMode)
+    ? value.calendarViewMode
+    : 'agenda'
+  const calendarGridMode = CALENDAR_GRID_MODES.includes(value.calendarGridMode)
+    ? value.calendarGridMode
+    : 'month'
+  return { theme, showPast, timeMode, calendarViewMode, calendarGridMode }
 }
 
 function normalizeCategories(rawCategories) {
@@ -73,7 +91,7 @@ function normalizeAppointments(rawAppointments, preferences) {
       if (
         typeof timeZone !== 'string' ||
         !timeZone.trim() ||
-        !EUROPE_TIMEZONES.includes(timeZone)
+        !isValidTimeZone(timeZone)
       ) {
         timeZone = DEFAULT_TIME_ZONE
         changed = true

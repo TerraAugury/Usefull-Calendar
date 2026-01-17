@@ -10,8 +10,10 @@ export default function FilterDrawer({
   active,
   showPast,
   onToggleShowPast,
+  mode = 'agenda',
 }) {
   const [open, setOpen] = useState(false)
+  const showAgendaFields = mode === 'agenda'
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
@@ -33,21 +35,25 @@ export default function FilterDrawer({
             </Dialog.Close>
           </div>
           <Dialog.Description className="sr-only">
-            Filter appointments by search, category, date range, and past visibility.
+            {showAgendaFields
+              ? 'Filter appointments by search, category, date range, and past visibility.'
+              : 'Filter appointments by category and past visibility.'}
           </Dialog.Description>
 
-          <div className="form-field">
-            <label className="form-label" htmlFor="search">
-              Search
-            </label>
-            <input
-              id="search"
-              type="search"
-              value={filters.search}
-              onChange={(event) => onChange({ search: event.target.value })}
-              placeholder="Title, location, notes"
-            />
-          </div>
+          {showAgendaFields ? (
+            <div className="form-field">
+              <label className="form-label" htmlFor="search">
+                Search
+              </label>
+              <input
+                id="search"
+                type="search"
+                value={filters.search}
+                onChange={(event) => onChange({ search: event.target.value })}
+                placeholder="Title, location, notes"
+              />
+            </div>
+          ) : null}
 
           <div className="form-field">
             <label className="form-label" htmlFor="filter-category">
@@ -67,30 +73,32 @@ export default function FilterDrawer({
             </select>
           </div>
 
-          <div className="form-row">
-            <div className="form-field">
-              <label className="form-label" htmlFor="date-from">
-                From
-              </label>
-              <input
-                id="date-from"
-                type="date"
-                value={filters.dateFrom}
-                onChange={(event) => onChange({ dateFrom: event.target.value })}
-              />
+          {showAgendaFields ? (
+            <div className="form-row">
+              <div className="form-field">
+                <label className="form-label" htmlFor="date-from">
+                  From
+                </label>
+                <input
+                  id="date-from"
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(event) => onChange({ dateFrom: event.target.value })}
+                />
+              </div>
+              <div className="form-field">
+                <label className="form-label" htmlFor="date-to">
+                  To
+                </label>
+                <input
+                  id="date-to"
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(event) => onChange({ dateTo: event.target.value })}
+                />
+              </div>
             </div>
-            <div className="form-field">
-              <label className="form-label" htmlFor="date-to">
-                To
-              </label>
-              <input
-                id="date-to"
-                type="date"
-                value={filters.dateTo}
-                onChange={(event) => onChange({ dateTo: event.target.value })}
-              />
-            </div>
-          </div>
+          ) : null}
 
           <div className="form-field">
             <span className="form-label">Past appointments</span>

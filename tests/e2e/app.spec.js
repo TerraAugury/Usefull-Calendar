@@ -63,6 +63,30 @@ test('no-past enforcement blocks saving', async ({ page }) => {
   await expect(page.getByText(/appointments cannot be in the past/i)).toBeVisible()
 })
 
+test('date and time inputs enforce min values', async ({ page }) => {
+  await initApp(page)
+
+  await page.getByRole('button', { name: 'Add appointment' }).click()
+  const dateInput = page.getByLabel('Date')
+  await expect(dateInput).toHaveAttribute('min', '2026-01-10')
+
+  await dateInput.fill('2026-01-10')
+  const timeInput = page.getByLabel('Start time')
+  await expect(timeInput).toHaveAttribute('min', '10:00')
+})
+
+test('calendar grid opens day sheet with appointments', async ({ page }) => {
+  const seedData = buildSeedData()
+  await initApp(page, { seedData })
+
+  const switcher = page.locator('.calendar-view-switcher')
+  await switcher.getByRole('button', { name: 'Calendar' }).click()
+  await expect(page.locator('.calendar-grid')).toBeVisible()
+
+  await page.locator('[data-date="2026-01-10"]').click()
+  await expect(page.getByText('Evening walk')).toBeVisible()
+})
+
 test('timezone mode: create appointment with Europe/Paris', async ({ page }) => {
   const seedData = buildSeedData()
   await initApp(page, { seedData })
@@ -73,8 +97,8 @@ test('timezone mode: create appointment with Europe/Paris', async ({ page }) => 
   await page.getByRole('button', { name: 'Add appointment' }).click()
   await page.getByLabel('Title').fill('Paris briefing')
   await page.getByLabel('Date').fill('2026-01-10')
-  await page.getByLabel('Start time').fill('12:00')
   await page.getByLabel('Timezone').selectOption('Europe/Paris')
+  await page.getByLabel('Start time').fill('12:00')
 
   await page.getByRole('button', { name: /save appointment/i }).click()
   await expect(page.getByRole('heading', { name: 'Calendar' })).toBeVisible()

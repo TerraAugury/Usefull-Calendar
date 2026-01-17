@@ -8,6 +8,12 @@ export default function AppointmentForm({
   submitDisabled = false,
   showTimeZone = false,
   timeZones = [],
+  dateMin = '',
+  startTimeMin = '',
+  endTimeMin = '',
+  timeDisabled = false,
+  timeDisabledMessage = '',
+  dateWarning = '',
   onCancel,
   showActions = true,
   formId,
@@ -44,8 +50,12 @@ export default function AppointmentForm({
             type="date"
             value={values.date}
             onChange={(event) => onChange({ date: event.target.value })}
+            min={dateMin || undefined}
           />
           {errors.date ? <span className="form-error">{errors.date}</span> : null}
+          {!errors.date && dateWarning ? (
+            <span className="form-error">{dateWarning}</span>
+          ) : null}
         </div>
         <div className="form-field">
           <label className="form-label" htmlFor="category">
@@ -79,9 +89,14 @@ export default function AppointmentForm({
             type="time"
             value={values.startTime}
             onChange={(event) => onChange({ startTime: event.target.value })}
+            min={startTimeMin || undefined}
+            disabled={timeDisabled}
           />
           {errors.startTime ? (
             <span className="form-error">{errors.startTime}</span>
+          ) : null}
+          {!errors.startTime && timeDisabledMessage ? (
+            <span className="helper-text">{timeDisabledMessage}</span>
           ) : null}
         </div>
         <div className="form-field">
@@ -93,6 +108,8 @@ export default function AppointmentForm({
             type="time"
             value={values.endTime}
             onChange={(event) => onChange({ endTime: event.target.value })}
+            min={endTimeMin || undefined}
+            disabled={timeDisabled}
           />
           {errors.endTime ? (
             <span className="form-error">{errors.endTime}</span>
@@ -112,8 +129,8 @@ export default function AppointmentForm({
           >
             <option value="">Select timezone</option>
             {timeZones.map((zone) => (
-              <option key={zone} value={zone}>
-                {zone}
+              <option key={zone.value} value={zone.value}>
+                {zone.label}
               </option>
             ))}
           </select>
