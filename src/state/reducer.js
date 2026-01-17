@@ -1,0 +1,185 @@
+import { DEFAULT_FILTERS, EMPTY_DRAFT } from '../utils/constants'
+import { getDefaultCategories } from '../data/sampleData'
+import { createId } from '../utils/id'
+import { loadStoredData } from '../storage/storage'
+
+function buildDefaultCategories() {
+  return getDefaultCategories()
+}
+
+function buildDraft(categories) {
+  const fallbackId = categories[0]?.id ?? ''
+  return { ...EMPTY_DRAFT, categoryId: fallbackId }
+}
+
+export function createInitialState() {
+  const stored = loadStoredData()
+  const categories = stored.categories ?? buildDefaultCategories()
+  const appointments = stored.appointments ?? []
+  const preferences = stored.preferences ?? { theme: 'system' }
+  return {
+    categories,
+    appointments,
+    preferences,
+    ui: {
+      tab: 'calendar',
+      filters: { ...DEFAULT_FILTERS },
+      addDraft: buildDraft(categories),
+      toast: null,
+      lastAddedId: null,
+    },
+  }
+}
+
+function ensureDraftCategory(draft, categories) {
+  if (!draft.categoryId && categories[0]) {
+    return { ...draft, categoryId: categories[0].id }
+  }
+  if (draft.categoryId && categories.some((cat) => cat.id === draft.categoryId)) {
+    return draft
+  }
+  return { ...draft, categoryId: categories[0]?.id ?? '' }
+}
+
+export function reducer(state, action) {
+  switch (action.type) {
+    case 'SET_TAB':
+      return { ...state, ui: { ...state.ui, tab: action.tab } }
+    case 'SET_FILTERS':
+      return {
+        ...state,
+        ui: { ...state.ui, filters: { ...state.ui.filters, ...action.filters } },
+      }
+    case 'RESET_FILTERS':
+      return { ...state, ui: { ...state.ui, filters: { ...DEFAULT_FILTERS } } }
+    case 'SET_ADD_DRAFT':
+      return {
+        ...state,
+        ui: {
+          ...state.ui,
+          addDraft: ensureDraftCategory(
+            { ...state.ui.addDraft, ...action.values },
+            state.categories,
+          ),
+        },
+      }
+    case 'RESET_ADD_DRAFT':
+      return {
+        ...state,
+        ui: { ...state.ui, addDraft: buildDraft(state.categories) },
+      }
+    case 'ADD_APPOINTMENT': {
+      const now = new Date().toISOString()
+      const newAppointment = {
+        id: createId('apt_'),
+        status: action.values.status ?? 'planned',
+        createdAt: now,
+        updatedAt: now,
+        ...action.values,
+      }
+      return {
+        ...state,
+        appointments: [...state.appointments, newAppointment],
+        ui: {
+          ...state.ui,
+          lastAddedId: newAppointment.id,
+          toast: { message: 'Appointment added.', id: createId('toast_') },
+        },
+      }
+    }
+    case 'UPDATE_APPOINTMENT': {
+      const now = new Date().toISOString()
+      const appointments = state.appointments.map((appointment) =>
+        appointment.id === action.id
+          ? { ...appointment, ...action.values, updatedAt: now }
+          : appointment,
+      )
+      return { ...state, appointments }
+    }
+    case 'DELETE_APPOINTMENT': {
+      const appointments = state.appointments.filter(
+        (appointment) => appointment.id !== action.id,
+      )
+      return { ...state, appointments }
+    }
+    case 'ADD_CATEGORY': {
+      const newCategory = {
+        id: createId('cat_'),
+        name: action.values.name,
+        color: action.values.color,
+      }
+      const categories = [...state.categories, newCategory]
+      return {
+        ...state,
+        categories,
+        ui: {
+          ...state.ui,
+          addDraft: ensureDraftCategory(state.ui.addDraft, categories),
+        },
+      }
+    }
+    case 'SET_PREFERENCES':
+      return {
+        ...state,
+        preferences: { ...state.preferences, ...action.values },
+      }
+    case 'SET_TOAST':
+      return {
+        ...state,
+        ui: { ...state.ui, toast: { message: action.message, id: createId('toast_') } },
+      }
+    case 'CLEAR_LAST_ADDED':
+      return {
+        ...state,
+        ui: { ...state.ui, lastAddedId: null },
+      }
+    case 'CLEAR_TOAST':
+      return { ...state, ui: { ...state.ui, toast: null } }
+    case 'IMPORT_STATE': {
+      const categories = action.values.categories
+      return {
+        ...state,
+        categories,
+        appointments: action.values.appointments,
+        preferences: action.values.preferences,
+        ui: {
+          ...state.ui,
+          addDraft: buildDraft(categories),
+          toast: { message: 'Import complete.', id: createId('toast_') },
+        },
+      }
+    }
+    case 'LOAD_SAMPLE_DATA': {
+      const categories = action.values.categories
+      return {
+        ...state,
+        categories,
+        appointments: action.values.appointments,
+        preferences: state.preferences,
+        ui: {
+          ...state.ui,
+          addDraft: buildDraft(categories),
+          toast: { message: 'Sample data loaded.', id: createId('toast_') },
+        },
+      }
+    }
+    case 'RESET_ALL': {
+      const categories = buildDefaultCategories()
+      return {
+        ...state,
+        categories,
+        appointments: [],
+        preferences: { theme: 'system' },
+        ui: {
+          tab: 'calendar',
+          filters: { ...DEFAULT_FILTERS },
+          addDraft: buildDraft(categories),
+          toast: { message: 'All data cleared.', id: createId('toast_') },
+          lastAddedId: null,
+        },
+      }
+    }
+    default:
+      return state
+  }
+}
