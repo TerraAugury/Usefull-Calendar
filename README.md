@@ -32,8 +32,11 @@ npm run test:visual
 Update snapshots when intentional UI changes are made:
 
 ```bash
-npx playwright test tests/e2e/visual.spec.js --update-snapshots
+npm run test:visual:update
 ```
+
+If you need linux-baseline updates from CI, run the "Update Visual Snapshots"
+workflow in GitHub Actions. It will open a PR with refreshed snapshots.
 
 ## Airport dataset generation
 
