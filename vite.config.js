@@ -3,7 +3,8 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/<REPO_NAME>/', // Replace with your GitHub repo name for Pages.
+  // base: '/<REPO_NAME>/', // Replace with your GitHub repo name for Pages.
+  base: '/Usefull-Calendar/',
   plugins: [react()],
   test: {
     environment: 'jsdom',
