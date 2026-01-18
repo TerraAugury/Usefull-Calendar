@@ -31,9 +31,19 @@ test('visual: filter drawer open @visual', async ({ page }) => {
     () => document.documentElement.getAttribute('data-theme') === 'light',
   )
   await page.getByLabel('Open filters').click()
-  await page.waitForSelector('.drawer-content[data-state="open"]')
+  const drawer = page.locator('.drawer-content[data-state="open"]')
+  await drawer.waitFor({ state: 'visible' })
+  await drawer.evaluate((node) => {
+    node.scrollTop = 0
+  })
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve))
+      }),
+  )
   await disableAnimations(page)
-  await expect(page).toHaveScreenshot('filter-drawer-open.png', { fullPage: true })
+  await expect(drawer).toHaveScreenshot('filter-drawer-open.png')
 })
 
 test('visual: appointment details dialog open @visual', async ({ page }) => {

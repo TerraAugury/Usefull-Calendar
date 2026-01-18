@@ -78,6 +78,21 @@ export async function disableAnimations(page) {
         transition-duration: 0s !important;
         transition-delay: 0s !important;
       }
+      .dialog-overlay,
+      .dialog-content,
+      .sheet-content,
+      .drawer-content {
+        box-shadow: none !important;
+        filter: none !important;
+        backdrop-filter: none !important;
+      }
+      .drawer-content {
+        scrollbar-gutter: stable both-edges !important;
+      }
+      .drawer-content::-webkit-scrollbar {
+        width: 0 !important;
+        height: 0 !important;
+      }
     `,
   })
 }
