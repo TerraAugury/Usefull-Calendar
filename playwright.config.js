@@ -7,6 +7,23 @@ export default defineConfig({
   timeout: 30 * 1000,
   retries: process.env.CI ? 2 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],
+  projects: [
+    {
+      name: 'e2e',
+      grepInvert: /@visual/,
+    },
+    {
+      name: 'visual',
+      grep: /@visual/,
+      snapshotPathTemplate:
+        '{testDir}/visual.spec.js-snapshots/{arg}-linux{ext}',
+      use: {
+        viewport: { width: 1280, height: 720 },
+        deviceScaleFactor: 1,
+        reducedMotion: 'reduce',
+      },
+    },
+  ],
   use: {
     baseURL: 'http://127.0.0.1:4173',
     trace: 'retain-on-failure',

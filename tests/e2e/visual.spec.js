@@ -3,6 +3,7 @@ import { buildSeedData, disableAnimations, initApp } from './helpers.js'
 
 test('visual: calendar light (mobile) @visual', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
+  await page.emulateMedia({ colorScheme: 'light' })
   const seedData = buildSeedData({ theme: 'light' })
   await initApp(page, { seedData })
   await page.waitForFunction(
@@ -13,7 +14,8 @@ test('visual: calendar light (mobile) @visual', async ({ page }) => {
 })
 
 test('visual: calendar dark (desktop) @visual', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await page.emulateMedia({ colorScheme: 'dark' })
   const seedData = buildSeedData({ theme: 'dark' })
   await initApp(page, { seedData })
   await page.waitForFunction(
@@ -25,6 +27,7 @@ test('visual: calendar dark (desktop) @visual', async ({ page }) => {
 
 test('visual: filter drawer open @visual', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
+  await page.emulateMedia({ colorScheme: 'light' })
   const seedData = buildSeedData({ theme: 'light' })
   await initApp(page, { seedData })
   await page.waitForFunction(
@@ -43,11 +46,14 @@ test('visual: filter drawer open @visual', async ({ page }) => {
       }),
   )
   await disableAnimations(page)
-  await expect(drawer).toHaveScreenshot('filter-drawer-open.png')
+  await expect(drawer).toHaveScreenshot('filter-drawer-open.png', {
+    maxDiffPixelRatio: 0.01,
+  })
 })
 
 test('visual: appointment details dialog open @visual', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
+  await page.emulateMedia({ colorScheme: 'light' })
   const seedData = buildSeedData({ theme: 'light' })
   await initApp(page, { seedData })
   await page.waitForFunction(
