@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import ConfirmDialog from '../components/ConfirmDialog'
-import { useAppDispatch, useAppState } from '../state/AppState'
+import { useAppDispatch, useAppState } from '../state/hooks'
 import { buildExport, parseImport } from '../storage/storage'
 import { getDefaultCategories, getSampleAppointments } from '../data/sampleData'
 import { DEFAULT_PAX_STATE } from '../utils/pax'

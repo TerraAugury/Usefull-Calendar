@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { TIMEZONE_OPTIONS } from '../utils/constants'
 import {
@@ -23,13 +23,8 @@ export default function EditDialog({
   onSave,
   onCancel,
 }) {
-  const [values, setValues] = useState(null)
-  const [errors, setErrors] = useState({})
-  const formId = 'edit-appointment-form'
-
-  useEffect(() => {
-    if (appointment) {
-      setValues({
+  const initialValues = appointment
+    ? {
         title: appointment.title ?? '',
         date: appointment.date ?? '',
         startTime: appointment.startTime ?? '',
@@ -38,19 +33,28 @@ export default function EditDialog({
         location: appointment.location ?? '',
         notes: appointment.notes ?? '',
         timeZone: appointment.timeZone ?? '',
-      })
-      setErrors({})
-    }
-  }, [appointment])
+      }
+    : null
+  const [values, setValues] = useState(() => initialValues)
+  const [errors, setErrors] = useState({})
+  const formId = 'edit-appointment-form'
 
-  useEffect(() => {
-    if (!values) return
-    const startMinutes = timeStringToMinutes(values.startTime)
-    const endMinutes = timeStringToMinutes(values.endTime)
-    if (startMinutes !== null && endMinutes !== null && endMinutes < startMinutes) {
-      setValues((prev) => ({ ...prev, endTime: '' }))
-    }
-  }, [values?.startTime, values?.endTime])
+  const handleChange = (patch) => {
+    setValues((prev) => {
+      if (!prev) return prev
+      const next = { ...prev, ...patch }
+      const startMinutes = timeStringToMinutes(next.startTime)
+      const endMinutes = timeStringToMinutes(next.endTime)
+      if (
+        startMinutes !== null &&
+        endMinutes !== null &&
+        endMinutes < startMinutes
+      ) {
+        next.endTime = ''
+      }
+      return next
+    })
+  }
 
   if (!appointment || !values) return null
   const now = new Date()
@@ -124,7 +128,7 @@ export default function EditDialog({
               values={values}
               errors={visibleErrors}
               categories={categories}
-              onChange={(patch) => setValues((prev) => ({ ...prev, ...patch }))}
+              onChange={handleChange}
               onSubmit={handleSubmit}
               submitLabel="Save changes"
               showActions={false}

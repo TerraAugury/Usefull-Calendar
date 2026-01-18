@@ -8,7 +8,7 @@ import EditDialog from '../components/EditDialog'
 import FilterDrawer from '../components/FilterDrawer'
 import MonthGrid from '../components/MonthGrid'
 import WeekGrid from '../components/WeekGrid'
-import { useAppDispatch, useAppState } from '../state/AppState'
+import { useAppDispatch, useAppState } from '../state/hooks'
 import {
   applyFilters,
   areFiltersActive,
@@ -59,9 +59,10 @@ export default function CalendarScreen() {
   const paxState = pax ?? DEFAULT_PAX_STATE
   const paxNames = paxState.paxNames ?? []
   const selectedPaxName = paxState.selectedPaxName
-  const paxFlights = selectedPaxName
-    ? paxState.paxLocations?.[selectedPaxName]?.flights ?? []
-    : []
+  const paxFlights = useMemo(() => {
+    if (!selectedPaxName) return []
+    return paxState.paxLocations?.[selectedPaxName]?.flights ?? []
+  }, [paxState.paxLocations, selectedPaxName])
   const calendarTimeZone =
     timeMode === 'timezone'
       ? appointments.find((appointment) => appointment.timeZone)?.timeZone ??
@@ -115,12 +116,6 @@ export default function CalendarScreen() {
       <CountryBadge country={country} className="agenda-country" />
     ) : null
   }
-
-  useEffect(() => {
-    if (viewMode !== 'calendar' && daySheetDate) {
-      setDaySheetDate(null)
-    }
-  }, [viewMode, daySheetDate])
 
   useEffect(() => {
     if (!ui.lastAddedId) return
@@ -229,9 +224,15 @@ export default function CalendarScreen() {
         <CalendarViewSwitcher
           viewMode={viewMode}
           gridMode={gridMode}
-          onViewModeChange={(mode) =>
-            dispatch({ type: 'SET_PREFERENCES', values: { calendarViewMode: mode } })
-          }
+          onViewModeChange={(mode) => {
+            if (mode !== 'calendar') {
+              setDaySheetDate(null)
+            }
+            dispatch({
+              type: 'SET_PREFERENCES',
+              values: { calendarViewMode: mode },
+            })
+          }}
           onGridModeChange={(mode) =>
             dispatch({ type: 'SET_PREFERENCES', values: { calendarGridMode: mode } })
           }
@@ -529,6 +530,7 @@ export default function CalendarScreen() {
       />
 
       <EditDialog
+        key={editingAppointment?.id ?? 'edit-dialog'}
         open={Boolean(editingId)}
         onOpenChange={(open) => {
           if (!open) {

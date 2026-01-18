@@ -1,4 +1,4 @@
-import { useAppDispatch, useAppState } from '../state/AppState'
+import { useAppDispatch, useAppState } from '../state/hooks'
 import { IconCalendar, IconPlus, IconSettings, IconTag } from './Icons'
 
 const tabs = [

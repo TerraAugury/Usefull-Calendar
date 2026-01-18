@@ -5,7 +5,8 @@ import AddScreen from './screens/AddScreen'
 import CalendarScreen from './screens/CalendarScreen'
 import CategoriesScreen from './screens/CategoriesScreen'
 import SettingsScreen from './screens/SettingsScreen'
-import { AppStateProvider, useAppState } from './state/AppState'
+import { AppStateProvider } from './state/AppState'
+import { useAppState } from './state/hooks'
 
 function AppShell() {
   const { ui, preferences } = useAppState()

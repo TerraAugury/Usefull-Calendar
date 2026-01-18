@@ -2,7 +2,7 @@ import { useState } from 'react'
 import CategoryPill from '../components/CategoryPill'
 import EmojiPickerDialog from '../components/EmojiPickerDialog'
 import { getDefaultCategoryIcon } from '../data/sampleData'
-import { useAppDispatch, useAppState } from '../state/AppState'
+import { useAppDispatch, useAppState } from '../state/hooks'
 import { CATEGORY_COLORS } from '../utils/constants'
 import { validateCategoryInput } from '../utils/validation'
 

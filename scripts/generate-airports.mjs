@@ -243,7 +243,6 @@ async function main() {
   const flagMap = new Map()
   let missingFlags = 0
   for (const code of countryCodes) {
-    // eslint-disable-next-line no-await-in-loop
     const svg = await fetchFlagSvg(code)
     if (!svg) {
       missingFlags += 1

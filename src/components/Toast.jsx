@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useAppDispatch, useAppState } from '../state/AppState'
+import { useAppDispatch, useAppState } from '../state/hooks'
 
 export default function Toast() {
   const { ui } = useAppState()
@@ -12,7 +12,7 @@ export default function Toast() {
       dispatch({ type: 'CLEAR_TOAST' })
     }, 2200)
     return () => clearTimeout(timer)
-  }, [toast?.id, dispatch])
+  }, [toast, dispatch])
 
   if (!toast) return null
 
