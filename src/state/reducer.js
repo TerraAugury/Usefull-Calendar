@@ -2,6 +2,7 @@ import { DEFAULT_FILTERS, EMPTY_DRAFT } from '../utils/constants'
 import { getDefaultCategories, getDefaultCategoryIcon } from '../data/sampleData'
 import { createId } from '../utils/id'
 import { loadStoredData } from '../storage/storage'
+import { DEFAULT_PAX_STATE } from '../utils/pax'
 
 function buildDefaultCategories() {
   return getDefaultCategories()
@@ -23,10 +24,12 @@ export function createInitialState() {
     calendarViewMode: 'agenda',
     calendarGridMode: 'month',
   }
+  const pax = stored.pax ?? { ...DEFAULT_PAX_STATE, paxLocations: {} }
   return {
     categories,
     appointments,
     preferences,
+    pax,
     ui: {
       tab: 'calendar',
       filters: { ...DEFAULT_FILTERS },
@@ -130,6 +133,11 @@ export function reducer(state, action) {
         ...state,
         preferences: { ...state.preferences, ...action.values },
       }
+    case 'SET_PAX_STATE':
+      return {
+        ...state,
+        pax: action.values,
+      }
     case 'SET_TOAST':
       return {
         ...state,
@@ -149,10 +157,36 @@ export function reducer(state, action) {
         categories,
         appointments: action.values.appointments,
         preferences: action.values.preferences,
+        pax: { ...DEFAULT_PAX_STATE, paxLocations: {} },
         ui: {
           ...state.ui,
           addDraft: buildDraft(categories),
           toast: { message: 'Import complete.', id: createId('toast_') },
+        },
+      }
+    }
+    case 'IMPORT_TRIP_FLIGHTS': {
+      const now = new Date().toISOString()
+      const newAppointments = action.values.appointments.map((appointment) => ({
+        id: createId('apt_'),
+        status: appointment.status ?? 'planned',
+        createdAt: now,
+        updatedAt: now,
+        ...appointment,
+      }))
+      const categories = action.values.categories
+      return {
+        ...state,
+        categories,
+        appointments: [...state.appointments, ...newAppointments],
+        pax: action.values.pax,
+        ui: {
+          ...state.ui,
+          addDraft: ensureDraftCategory(state.ui.addDraft, categories),
+          toast: {
+            message: action.values.toastMessage,
+            id: createId('toast_'),
+          },
         },
       }
     }
@@ -163,6 +197,7 @@ export function reducer(state, action) {
         categories,
         appointments: action.values.appointments,
         preferences: state.preferences,
+        pax: state.pax,
         ui: {
           ...state.ui,
           addDraft: buildDraft(categories),
@@ -183,6 +218,7 @@ export function reducer(state, action) {
           calendarViewMode: 'agenda',
           calendarGridMode: 'month',
         },
+        pax: { ...DEFAULT_PAX_STATE, paxLocations: {} },
         ui: {
           tab: 'calendar',
           filters: { ...DEFAULT_FILTERS },

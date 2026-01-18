@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import AppointmentCard from '../components/AppointmentCard'
 import CalendarViewSwitcher from '../components/CalendarViewSwitcher'
+import CountryBadge from '../components/CountryBadge'
 import DaySheet from '../components/DaySheet'
 import DetailsDialog from '../components/DetailsDialog'
 import EditDialog from '../components/EditDialog'
@@ -19,12 +20,14 @@ import {
   addDays,
   buildAppointmentDateMap,
   filterAppointmentsByDateVisibility,
-  getWeekDays,
+  filterAppointmentsInWeek,
+  getWeekRange,
 } from '../utils/calendar'
-import { formatDateLabel, getTodayYYYYMMDD } from '../utils/dates'
+import { formatDateLabel, formatDateYYYYMMDD, getTodayYYYYMMDD } from '../utils/dates'
+import { DEFAULT_PAX_STATE, getPaxCountryForDate } from '../utils/pax'
 
 export default function CalendarScreen() {
-  const { appointments, categories, ui, preferences } = useAppState()
+  const { appointments, categories, ui, preferences, pax } = useAppState()
   const dispatch = useAppDispatch()
   const [selectedId, setSelectedId] = useState(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -34,6 +37,8 @@ export default function CalendarScreen() {
 
   const viewMode = preferences.calendarViewMode ?? 'agenda'
   const gridMode = preferences.calendarGridMode ?? 'month'
+  const now = new Date()
+  const nowMs = now.getTime()
 
   const filtered = useMemo(
     () => applyFilters(appointments, ui.filters),
@@ -51,6 +56,12 @@ export default function CalendarScreen() {
       : ui.filters.categoryId !== 'all'
   const showPast = preferences.showPast
   const timeMode = preferences.timeMode ?? 'local'
+  const paxState = pax ?? DEFAULT_PAX_STATE
+  const paxNames = paxState.paxNames ?? []
+  const selectedPaxName = paxState.selectedPaxName
+  const paxFlights = selectedPaxName
+    ? paxState.paxLocations?.[selectedPaxName]?.flights ?? []
+    : []
   const calendarTimeZone =
     timeMode === 'timezone'
       ? appointments.find((appointment) => appointment.timeZone)?.timeZone ??
@@ -59,7 +70,7 @@ export default function CalendarScreen() {
   const todayDateStr = getTodayYYYYMMDD({
     mode: timeMode,
     timeZone: calendarTimeZone,
-    now: new Date(),
+    now,
   })
 
   const calendarFiltered = useMemo(() => {
@@ -84,6 +95,27 @@ export default function CalendarScreen() {
     [categories],
   )
 
+  const countryForDate = useMemo(() => {
+    if (!selectedPaxName || paxFlights.length === 0) {
+      return null
+    }
+    const cache = new Map()
+    return (dateStr) => {
+      if (!dateStr) return null
+      if (cache.has(dateStr)) return cache.get(dateStr)
+      const country = getPaxCountryForDate(paxFlights, dateStr)
+      cache.set(dateStr, country)
+      return country
+    }
+  }, [paxFlights, selectedPaxName])
+
+  const renderCountryBadge = (dateStr) => {
+    const country = countryForDate ? countryForDate(dateStr) : null
+    return country ? (
+      <CountryBadge country={country} className="agenda-country" />
+    ) : null
+  }
+
   useEffect(() => {
     if (viewMode !== 'calendar' && daySheetDate) {
       setDaySheetDate(null)
@@ -107,6 +139,36 @@ export default function CalendarScreen() {
   )
   const editingAppointment = appointments.find((appointment) => appointment.id === editingId)
 
+  const weekRange = useMemo(
+    () => getWeekRange(calendarAnchor, 1),
+    [calendarAnchor],
+  )
+  const weekAppointments = useMemo(
+    () =>
+      filterAppointmentsInWeek({
+        appointments: calendarFiltered,
+        weekStartStr: weekRange.startStr,
+        weekEndStr: weekRange.endStr,
+        showPast,
+        nowMs,
+      }),
+    [calendarFiltered, weekRange.startStr, weekRange.endStr, showPast, nowMs],
+  )
+  const weekAppointmentMap = useMemo(
+    () => buildAppointmentDateMap(weekAppointments),
+    [weekAppointments],
+  )
+  const weekGroups = useMemo(() => {
+    return weekRange.days.reduce((acc, day) => {
+      const dateStr = formatDateYYYYMMDD(day)
+      const items = weekAppointmentMap.get(dateStr)
+      if (items && items.length) {
+        acc.push({ date: dateStr, items })
+      }
+      return acc
+    }, [])
+  }, [weekAppointmentMap, weekRange.days])
+
   const hasAppointments = appointments.length > 0
   const hasUpcoming = upcomingGroups.length > 0
   const hasPast = pastGroups.length > 0
@@ -122,21 +184,17 @@ export default function CalendarScreen() {
 
   const weekLabel = useMemo(() => {
     if (gridMode !== 'week') return ''
-    const weekDays = getWeekDays(calendarAnchor, 1)
-    if (weekDays.length !== 7) return ''
-    const start = weekDays[0]
-    const end = weekDays[6]
-    const startLabel = start.toLocaleDateString(undefined, {
+    const startLabel = weekRange.start.toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
     })
-    const endLabel = end.toLocaleDateString(undefined, {
+    const endLabel = weekRange.end.toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     })
     return `${startLabel} – ${endLabel}`
-  }, [calendarAnchor, gridMode])
+  }, [gridMode, weekRange.end, weekRange.start])
 
   const monthLabel = useMemo(() => {
     if (gridMode !== 'month') return ''
@@ -147,6 +205,8 @@ export default function CalendarScreen() {
   const daySheetAppointments = daySheetDate
     ? appointmentMap.get(daySheetDate) ?? []
     : []
+  const daySheetCountry =
+    daySheetDate && countryForDate ? countryForDate(daySheetDate) : null
 
   return (
     <section className="screen">
@@ -176,6 +236,33 @@ export default function CalendarScreen() {
             dispatch({ type: 'SET_PREFERENCES', values: { calendarGridMode: mode } })
           }
         />
+        {paxNames.length ? (
+          <div className="pax-selector">
+            <label className="form-label" htmlFor="pax-select">
+              Passenger
+            </label>
+            <select
+              id="pax-select"
+              value={selectedPaxName ?? ''}
+              onChange={(event) =>
+                dispatch({
+                  type: 'SET_PAX_STATE',
+                  values: {
+                    ...paxState,
+                    selectedPaxName: event.target.value || null,
+                  },
+                })
+              }
+            >
+              <option value="">Select passenger</option>
+              {paxNames.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
       </header>
 
       {viewMode === 'agenda' && showEmpty ? (
@@ -210,7 +297,10 @@ export default function CalendarScreen() {
                   <div className="section-label">Upcoming</div>
                   {upcomingGroups.map((group) => (
                     <div key={group.date} className="agenda-group">
-                      <div className="agenda-date">{formatDateLabel(group.date)}</div>
+                      <div className="agenda-date">
+                        {formatDateLabel(group.date)}
+                        {renderCountryBadge(group.date)}
+                      </div>
                       {group.items.map((appointment) => {
                         const category = categories.find(
                           (item) => item.id === appointment.categoryId,
@@ -236,7 +326,10 @@ export default function CalendarScreen() {
                   <div className="section-label">Past</div>
                   {pastGroups.map((group) => (
                     <div key={group.date} className="agenda-group">
-                      <div className="agenda-date">{formatDateLabel(group.date)}</div>
+                      <div className="agenda-date">
+                        {formatDateLabel(group.date)}
+                        {renderCountryBadge(group.date)}
+                      </div>
                       {group.items.map((appointment) => {
                         const category = categories.find(
                           (item) => item.id === appointment.categoryId,
@@ -261,7 +354,10 @@ export default function CalendarScreen() {
           ) : (
             upcomingGroups.map((group) => (
               <div key={group.date} className="agenda-group">
-                <div className="agenda-date">{formatDateLabel(group.date)}</div>
+                <div className="agenda-date">
+                  {formatDateLabel(group.date)}
+                  {renderCountryBadge(group.date)}
+                </div>
                 {group.items.map((appointment) => {
                   const category = categories.find(
                     (item) => item.id === appointment.categoryId,
@@ -328,24 +424,61 @@ export default function CalendarScreen() {
           </div>
 
           {gridMode === 'month' ? (
-            <MonthGrid
-              year={calendarAnchor.getFullYear()}
-              monthIndex={calendarAnchor.getMonth()}
-              appointmentsByDate={appointmentMap}
-              categoriesById={categoriesById}
-              todayDateStr={todayDateStr}
-              showPast={showPast}
-              onSelectDate={(dateStr) => setDaySheetDate(dateStr)}
-            />
+              <MonthGrid
+                year={calendarAnchor.getFullYear()}
+                monthIndex={calendarAnchor.getMonth()}
+                appointmentsByDate={appointmentMap}
+                categoriesById={categoriesById}
+                todayDateStr={todayDateStr}
+                showPast={showPast}
+                getCountryForDate={countryForDate}
+                onSelectDate={(dateStr) => setDaySheetDate(dateStr)}
+              />
           ) : (
-            <WeekGrid
-              anchorDate={calendarAnchor}
-              appointmentsByDate={appointmentMap}
-              categoriesById={categoriesById}
-              todayDateStr={todayDateStr}
-              showPast={showPast}
-              onSelectDate={(dateStr) => setDaySheetDate(dateStr)}
-            />
+            <>
+              <WeekGrid
+                anchorDate={calendarAnchor}
+                appointmentsByDate={appointmentMap}
+                categoriesById={categoriesById}
+                todayDateStr={todayDateStr}
+                showPast={showPast}
+                getCountryForDate={countryForDate}
+                onSelectDate={(dateStr) => setDaySheetDate(dateStr)}
+              />
+              <div className="week-agenda">
+                <div className="section-label">Appointments this week</div>
+                {weekGroups.length ? (
+                  <div className="agenda">
+                    {weekGroups.map((group) => (
+                      <div key={group.date} className="agenda-group">
+                        <div className="agenda-date">
+                          {formatDateLabel(group.date)}
+                          {renderCountryBadge(group.date)}
+                        </div>
+                        {group.items.map((appointment) => {
+                          const category = categoriesById.get(appointment.categoryId)
+                          return (
+                            <AppointmentCard
+                              key={appointment.id}
+                              appointment={appointment}
+                              category={category}
+                              onClick={() => {
+                                setSelectedId(appointment.id)
+                                setDetailsOpen(true)
+                              }}
+                            />
+                          )
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <p>No appointments this week.</p>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </>
       ) : null}
@@ -385,6 +518,7 @@ export default function CalendarScreen() {
           if (!open) setDaySheetDate(null)
         }}
         date={daySheetDate}
+        country={daySheetCountry}
         appointments={daySheetAppointments}
         categoriesById={categoriesById}
         onSelectAppointment={(appointment) => {

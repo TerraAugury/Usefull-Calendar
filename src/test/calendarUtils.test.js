@@ -2,7 +2,9 @@ import { formatDateYYYYMMDD } from '../utils/dates'
 import {
   buildAppointmentDateMap,
   filterAppointmentsByDateVisibility,
+  filterAppointmentsInWeek,
   getMonthGridDays,
+  getWeekRange,
   getWeekDays,
 } from '../utils/calendar'
 
@@ -20,6 +22,12 @@ describe('calendar utilities', () => {
     expect(weekDays).toHaveLength(7)
     expect(formatDateYYYYMMDD(weekDays[0])).toBe('2026-01-05')
     expect(formatDateYYYYMMDD(weekDays[6])).toBe('2026-01-11')
+  })
+
+  it('returns a week range with start and end dates', () => {
+    const range = getWeekRange(new Date(2026, 0, 7), 1)
+    expect(formatDateYYYYMMDD(range.start)).toBe('2026-01-05')
+    expect(formatDateYYYYMMDD(range.end)).toBe('2026-01-11')
   })
 
   it('groups appointments by date and sorts by start time', () => {
@@ -47,5 +55,30 @@ describe('calendar utilities', () => {
     expect(visible.map((item) => item.id)).toEqual(['today'])
     const all = filterAppointmentsByDateVisibility(appointments, '2026-01-10', true)
     expect(all).toHaveLength(2)
+  })
+
+  it('filters week appointments and respects showPast', () => {
+    const appointments = [
+      { id: 'past', date: '2026-01-09', startUtcMs: 100 },
+      { id: 'future', date: '2026-01-11', startUtcMs: 300 },
+      { id: 'out', date: '2026-01-20', startUtcMs: 400 },
+    ]
+    const nowMs = 200
+    const weekOnly = filterAppointmentsInWeek({
+      appointments,
+      weekStartStr: '2026-01-05',
+      weekEndStr: '2026-01-11',
+      showPast: false,
+      nowMs,
+    })
+    expect(weekOnly.map((item) => item.id)).toEqual(['future'])
+    const withPast = filterAppointmentsInWeek({
+      appointments,
+      weekStartStr: '2026-01-05',
+      weekEndStr: '2026-01-11',
+      showPast: true,
+      nowMs,
+    })
+    expect(withPast.map((item) => item.id)).toEqual(['past', 'future'])
   })
 })

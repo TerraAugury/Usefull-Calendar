@@ -247,3 +247,15 @@ export function getDateKeyFromUtcMs(utcMs, timeMode, timeZone) {
   const date = new Date(utcMs)
   return formatDateKey(date.getFullYear(), date.getMonth() + 1, date.getDate())
 }
+
+export function getTimeStringFromUtcMs(utcMs, timeZone) {
+  if (!Number.isFinite(utcMs) || !timeZone) return ''
+  const formatter = getDateTimeFormatter(timeZone)
+  const parts = getPartsMap(formatter, new Date(utcMs))
+  const hour = Number(parts.hour)
+  const minute = Number(parts.minute)
+  if (Number.isNaN(hour) || Number.isNaN(minute)) return ''
+  const hh = String(hour).padStart(2, '0')
+  const mm = String(minute).padStart(2, '0')
+  return `${hh}:${mm}`
+}

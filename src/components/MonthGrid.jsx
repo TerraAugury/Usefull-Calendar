@@ -1,4 +1,5 @@
 import { getMonthGridDays, toDateCell } from '../utils/calendar'
+import CountryBadge from './CountryBadge'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -9,6 +10,7 @@ export default function MonthGrid({
   categoriesById,
   todayDateStr,
   showPast,
+  getCountryForDate,
   onSelectDate,
 }) {
   const days = getMonthGridDays(year, monthIndex, 1).map((date) =>
@@ -28,6 +30,7 @@ export default function MonthGrid({
         const showIndicators = appointments.length > 0 && (showPast || !isPast)
         const dots = showIndicators ? appointments.slice(0, 3) : []
         const extra = showIndicators ? appointments.length - dots.length : 0
+        const country = getCountryForDate ? getCountryForDate(day.dateStr) : null
         return (
           <button
             key={day.dateStr}
@@ -66,6 +69,12 @@ export default function MonthGrid({
                 </span>
               ) : null}
             </div>
+            {country ? (
+              <CountryBadge
+                country={country}
+                className="calendar-day__country"
+              />
+            ) : null}
           </button>
         )
       })}

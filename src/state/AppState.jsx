@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useReducer } from 'react'
 import { reducer, createInitialState } from './reducer'
+import { DEFAULT_PAX_STATE } from '../utils/pax'
 import { saveStoredData } from '../storage/storage'
 
 const AppStateContext = createContext(null)
@@ -9,7 +10,13 @@ export function AppStateProvider({ children, initialState }) {
   const [state, dispatch] = useReducer(
     reducer,
     initialState,
-    () => initialState ?? createInitialState(),
+    () => {
+      const base = initialState ?? createInitialState()
+      if (!base.pax) {
+        return { ...base, pax: { ...DEFAULT_PAX_STATE, paxLocations: {} } }
+      }
+      return base
+    },
   )
 
   useEffect(() => {
@@ -17,8 +24,9 @@ export function AppStateProvider({ children, initialState }) {
       categories: state.categories,
       appointments: state.appointments,
       preferences: state.preferences,
+      pax: state.pax,
     })
-  }, [state.categories, state.appointments, state.preferences])
+  }, [state.categories, state.appointments, state.preferences, state.pax])
 
   return (
     <AppStateContext.Provider value={state}>

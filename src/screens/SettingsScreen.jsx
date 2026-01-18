@@ -1,11 +1,23 @@
 import { useMemo, useState } from 'react'
+import * as Dialog from '@radix-ui/react-dialog'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useAppDispatch, useAppState } from '../state/AppState'
 import { buildExport, parseImport } from '../storage/storage'
 import { getDefaultCategories, getSampleAppointments } from '../data/sampleData'
+import { DEFAULT_PAX_STATE } from '../utils/pax'
+import {
+  buildFlightDedupKey,
+  buildImportedFlight,
+  collectFlightsForPax,
+  dedupeImportedFlights,
+  extractPaxNames,
+  getTripImportStats,
+} from '../utils/trip'
+import { createId } from '../utils/id'
+import { IconClose } from '../components/Icons'
 
 export default function SettingsScreen() {
-  const { categories, appointments, preferences } = useAppState()
+  const { categories, appointments, preferences, pax } = useAppState()
   const dispatch = useAppDispatch()
   const [importText, setImportText] = useState('')
   const [importError, setImportError] = useState('')
@@ -13,6 +25,32 @@ export default function SettingsScreen() {
   const [confirmImportOpen, setConfirmImportOpen] = useState(false)
   const [confirmResetOpen, setConfirmResetOpen] = useState(false)
   const [confirmSampleOpen, setConfirmSampleOpen] = useState(false)
+  const [tripError, setTripError] = useState('')
+  const [pendingTrips, setPendingTrips] = useState(null)
+  const [pendingPaxNames, setPendingPaxNames] = useState([])
+  const [selectPaxOpen, setSelectPaxOpen] = useState(false)
+
+  const paxState = pax ?? DEFAULT_PAX_STATE
+
+  const ensureFlightsCategory = (current) => {
+    const existing = current.find(
+      (category) => category.name.trim().toLowerCase() === 'flights',
+    )
+    if (existing) {
+      return { categories: current, category: existing, added: false }
+    }
+    const flightsCategory = {
+      id: createId('cat_'),
+      name: 'Flights',
+      color: 'teal',
+      icon: '\u2708\uFE0F',
+    }
+    return {
+      categories: [...current, flightsCategory],
+      category: flightsCategory,
+      added: true,
+    }
+  }
 
   const canLoadSample = useMemo(() => {
     if (appointments.length > 0) return false
@@ -54,6 +92,111 @@ export default function SettingsScreen() {
     setImportError('')
     setPendingImport(parsed)
     setConfirmImportOpen(true)
+  }
+
+  const handleTripFile = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const text = await file.text()
+    let parsed = null
+    try {
+      parsed = JSON.parse(text)
+    } catch {
+      setTripError('Invalid JSON file.')
+      event.target.value = ''
+      return
+    }
+    if (!Array.isArray(parsed)) {
+      setTripError('Trip JSON must be an array of trips.')
+      event.target.value = ''
+      return
+    }
+    const paxNames = extractPaxNames(parsed)
+    if (!paxNames.length) {
+      const stats = getTripImportStats(parsed)
+      setTripError(
+        `No passengers found. Trips: ${stats.tripCount}, records: ${stats.recordCount}, flights recognized: ${stats.flightCount}.`,
+      )
+      event.target.value = ''
+      return
+    }
+    setTripError('')
+    setPendingTrips(parsed)
+    setPendingPaxNames(paxNames)
+    setSelectPaxOpen(true)
+    event.target.value = ''
+  }
+
+  const handleImportTripsForPax = (paxName) => {
+    if (!pendingTrips || !paxName) return
+    const flightRecords = collectFlightsForPax(pendingTrips, paxName)
+    const normalizedFlights = flightRecords
+      .map((record) => buildImportedFlight(record, paxName))
+      .filter(Boolean)
+
+    const importedFlights = dedupeImportedFlights(
+      normalizedFlights.map((item) => item.importedFlight),
+    )
+    const existingFlightKeys = new Set(
+      appointments
+        .filter((appointment) => appointment.source?.type === 'flight')
+        .map(
+          (appointment) =>
+            `${appointment.source.paxName}__${appointment.date}__${appointment.source.flightNumber}`,
+        ),
+    )
+
+    const { categories: nextCategories, category: flightsCategory } =
+      ensureFlightsCategory(categories)
+
+    let skipped = 0
+    const newAppointments = []
+    normalizedFlights.forEach((item) => {
+      const key = buildFlightDedupKey(
+        paxName,
+        item.importedFlight.flightDate,
+        item.importedFlight.flightNumber,
+      )
+      if (existingFlightKeys.has(key)) {
+        skipped += 1
+        return
+      }
+      existingFlightKeys.add(key)
+      newAppointments.push({
+        ...item.appointment,
+        categoryId: flightsCategory.id,
+      })
+    })
+
+    const existingFlights = paxState.paxLocations?.[paxName]?.flights ?? []
+    const mergedFlights = dedupeImportedFlights([
+      ...existingFlights,
+      ...importedFlights,
+    ])
+    const nextPaxNames = Array.from(
+      new Set([...paxState.paxNames, ...pendingPaxNames]),
+    ).sort((a, b) => a.localeCompare(b))
+    const nextPaxState = {
+      selectedPaxName: paxName,
+      paxNames: nextPaxNames,
+      paxLocations: {
+        ...paxState.paxLocations,
+        [paxName]: { flights: mergedFlights },
+      },
+    }
+
+    const toastMessage = `Imported ${newAppointments.length} new flights (${skipped} duplicates skipped) for ${paxName}.`
+    dispatch({
+      type: 'IMPORT_TRIP_FLIGHTS',
+      values: {
+        appointments: newAppointments,
+        pax: nextPaxState,
+        categories: nextCategories,
+        toastMessage,
+      },
+    })
+    dispatch({ type: 'SET_TAB', tab: 'calendar' })
+    setSelectPaxOpen(false)
   }
 
   return (
@@ -136,6 +279,19 @@ export default function SettingsScreen() {
       </div>
 
       <div className="form-field">
+        <label className="form-label" htmlFor="trip-import">
+          Import Trip JSON
+        </label>
+        <input
+          id="trip-import"
+          type="file"
+          accept="application/json"
+          onChange={handleTripFile}
+        />
+        {tripError ? <span className="form-error">{tripError}</span> : null}
+      </div>
+
+      <div className="form-field">
         <span className="form-label">Sample data</span>
         <button
           className="btn btn-secondary"
@@ -196,6 +352,48 @@ export default function SettingsScreen() {
           setConfirmSampleOpen(false)
         }}
       />
+
+      <Dialog.Root
+        open={selectPaxOpen}
+        onOpenChange={(open) => {
+          setSelectPaxOpen(open)
+          if (!open) {
+            setPendingTrips(null)
+            setPendingPaxNames([])
+          }
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="dialog-overlay" />
+          <Dialog.Content className="sheet-content">
+            <div className="dialog-header">
+              <Dialog.Title className="dialog-title">Select passenger</Dialog.Title>
+              <Dialog.Close asChild>
+                <button className="icon-button" type="button" aria-label="Close pax selector">
+                  <IconClose className="tab-icon" />
+                </button>
+              </Dialog.Close>
+            </div>
+            <Dialog.Description className="dialog-description">
+              Choose the passenger whose flights should be imported.
+            </Dialog.Description>
+            <div className="dialog-body">
+              <div className="pax-list">
+                {pendingPaxNames.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => handleImportTripsForPax(name)}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </section>
   )
 }

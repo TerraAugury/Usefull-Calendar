@@ -1,5 +1,6 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import AppointmentCard from './AppointmentCard'
+import CountryBadge from './CountryBadge'
 import { formatDateLabel } from '../utils/dates'
 import { IconClose } from './Icons'
 
@@ -7,6 +8,7 @@ export default function DaySheet({
   open,
   onOpenChange,
   date,
+  country,
   appointments,
   categoriesById,
   onSelectAppointment,
@@ -25,6 +27,9 @@ export default function DaySheet({
               </button>
             </Dialog.Close>
           </div>
+          {country ? (
+            <CountryBadge country={country} className="day-sheet__country" />
+          ) : null}
           <Dialog.Description className="sr-only">
             Appointments scheduled for this day.
           </Dialog.Description>

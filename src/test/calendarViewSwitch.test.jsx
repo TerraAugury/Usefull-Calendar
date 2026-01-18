@@ -135,6 +135,125 @@ describe('Calendar view switcher', () => {
     vi.useRealTimers()
   })
 
+  it('shows a week agenda list and opens details from it', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 0, 10, 9, 0, 0, 0))
+    const user = userEvent.setup()
+    const appointmentTime = buildUtcFields({
+      date: '2026-01-10',
+      startTime: '10:00',
+      endTime: '',
+      timeMode: 'local',
+    }).startUtcMs
+    const state = buildState({
+      appointments: [
+        {
+          id: 'apt-1',
+          title: 'Team sync',
+          date: '2026-01-10',
+          startTime: '10:00',
+          endTime: '',
+          categoryId: 'cat-1',
+          location: '',
+          notes: '',
+          status: 'planned',
+          createdAt: '2026-01-01T08:00:00.000Z',
+          updatedAt: '2026-01-01T08:00:00.000Z',
+          timeMode: 'local',
+          startUtcMs: appointmentTime,
+        },
+      ],
+      preferences: { calendarViewMode: 'calendar', calendarGridMode: 'week' },
+    })
+
+    render(
+      <AppStateProvider initialState={state}>
+        <CalendarScreen />
+      </AppStateProvider>,
+    )
+
+    expect(screen.getByText('Appointments this week')).toBeInTheDocument()
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /team sync/i }))
+    })
+
+    expect(await screen.findByRole('dialog', { name: /team sync/i })).toBeVisible()
+    vi.useRealTimers()
+  })
+
+  it('toggles past items in the week list', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 0, 10, 9, 0, 0, 0))
+    const user = userEvent.setup()
+    const pastTime = buildUtcFields({
+      date: '2026-01-10',
+      startTime: '08:00',
+      endTime: '',
+      timeMode: 'local',
+    }).startUtcMs
+    const futureTime = buildUtcFields({
+      date: '2026-01-10',
+      startTime: '10:00',
+      endTime: '',
+      timeMode: 'local',
+    }).startUtcMs
+    const state = buildState({
+      appointments: [
+        {
+          id: 'apt-past',
+          title: 'Past item',
+          date: '2026-01-10',
+          startTime: '08:00',
+          endTime: '',
+          categoryId: 'cat-1',
+          location: '',
+          notes: '',
+          status: 'done',
+          createdAt: '2026-01-01T08:00:00.000Z',
+          updatedAt: '2026-01-01T08:00:00.000Z',
+          timeMode: 'local',
+          startUtcMs: pastTime,
+        },
+        {
+          id: 'apt-future',
+          title: 'Future item',
+          date: '2026-01-10',
+          startTime: '10:00',
+          endTime: '',
+          categoryId: 'cat-1',
+          location: '',
+          notes: '',
+          status: 'planned',
+          createdAt: '2026-01-01T08:00:00.000Z',
+          updatedAt: '2026-01-01T08:00:00.000Z',
+          timeMode: 'local',
+          startUtcMs: futureTime,
+        },
+      ],
+      preferences: { calendarViewMode: 'calendar', calendarGridMode: 'week' },
+    })
+
+    render(
+      <AppStateProvider initialState={state}>
+        <CalendarScreen />
+      </AppStateProvider>,
+    )
+
+    expect(screen.queryByText('Past item')).toBeNull()
+    expect(screen.getByText('Future item')).toBeInTheDocument()
+
+    await act(async () => {
+      await user.click(screen.getByLabelText(/open filters/i))
+    })
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /show past appointments/i }))
+    })
+
+    expect(await screen.findByText('Past item')).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
   it('hides past indicators until show past is enabled', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date(2026, 0, 10, 9, 0, 0, 0))

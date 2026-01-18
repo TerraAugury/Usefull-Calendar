@@ -1,8 +1,10 @@
 import { useId, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { getDefaultCategoryIcon } from '../data/sampleData'
+import { getAirportInfo } from '../data/airports'
 import { STATUS_OPTIONS } from '../utils/constants'
 import { formatDateLabel, formatDateTime, formatTimeRange } from '../utils/dates'
+import CountryBadge from './CountryBadge'
 import { IconClose } from './Icons'
 import ConfirmDialog from './ConfirmDialog'
 
@@ -32,6 +34,10 @@ export default function DetailsDialog({
     appointment.timeMode === 'timezone' && appointment.timeZone
       ? ` (${appointment.timeZone})`
       : ''
+  const flightCountry =
+    appointment.source?.type === 'flight' && appointment.source.fromIata
+      ? getAirportInfo(appointment.source.fromIata)
+      : null
 
   return (
     <>
@@ -68,6 +74,12 @@ export default function DetailsDialog({
                   <div className="detail-row">
                     <span className="detail-label">Timezone</span>
                     <span>{appointment.timeZone}</span>
+                  </div>
+                ) : null}
+                {flightCountry && flightCountry.countryName ? (
+                  <div className="detail-row">
+                    <span className="detail-label">Country</span>
+                    <CountryBadge country={flightCountry} className="detail-country" />
                   </div>
                 ) : null}
                 <div className="detail-row">

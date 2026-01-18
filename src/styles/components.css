@@ -121,6 +121,51 @@
   letter-spacing: 0.04em;
 }
 
+.agenda-country {
+  margin-left: var(--space-2);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.countryBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.countryBadge__flag {
+  width: 1em;
+  height: 1em;
+  font-size: 1em;
+  line-height: 1;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", emoji;
+  font-weight: 400;
+  font-variant-emoji: emoji;
+  font-variant-ligatures: normal;
+  letter-spacing: 0;
+  object-fit: contain;
+}
+
+.countryBadge__name {
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.day-sheet__country {
+  margin-top: var(--space-1);
+}
+
+.pax-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 240px;
+}
+
 .calendar-header {
   flex-direction: column;
   align-items: stretch;
@@ -254,6 +299,20 @@
   flex-wrap: wrap;
 }
 
+.calendar-day__country {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.detail-country {
+  justify-content: flex-end;
+}
+
 .calendar-dot {
   width: 6px;
   height: 6px;
@@ -264,6 +323,19 @@
 .calendar-more {
   font-size: 11px;
   color: var(--text-2);
+}
+
+.week-agenda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.pax-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .day-sheet-list {

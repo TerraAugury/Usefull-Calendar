@@ -26,6 +26,19 @@ export function getWeekDays(anchorDate, weekStartsOn = 1) {
   return Array.from({ length: 7 }, (_, index) => addDays(start, index))
 }
 
+export function getWeekRange(anchorDate, weekStartsOn = 1) {
+  const days = getWeekDays(anchorDate, weekStartsOn)
+  const start = days[0]
+  const end = days[6]
+  return {
+    start,
+    end,
+    days,
+    startStr: formatDateYYYYMMDD(start),
+    endStr: formatDateYYYYMMDD(end),
+  }
+}
+
 export function getMonthGridDays(year, monthIndex, weekStartsOn = 1) {
   const firstOfMonth = new Date(year, monthIndex, 1)
   const lastOfMonth = new Date(year, monthIndex + 1, 0)
@@ -58,6 +71,26 @@ export function filterAppointmentsByDateVisibility(
 ) {
   if (showPast || !todayDateStr) return appointments
   return appointments.filter((appointment) => appointment.date >= todayDateStr)
+}
+
+export function filterAppointmentsInWeek({
+  appointments,
+  weekStartStr,
+  weekEndStr,
+  showPast,
+  nowMs,
+}) {
+  const filtered = appointments.filter((appointment) => {
+    if (!appointment?.date) return false
+    if (appointment.date < weekStartStr || appointment.date > weekEndStr) {
+      return false
+    }
+    if (!showPast && Number.isFinite(appointment.startUtcMs)) {
+      return appointment.startUtcMs >= nowMs
+    }
+    return true
+  })
+  return filtered.sort((a, b) => (a.startUtcMs ?? 0) - (b.startUtcMs ?? 0))
 }
 
 export function toDateCell(date, currentMonth) {

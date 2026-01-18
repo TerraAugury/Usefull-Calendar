@@ -11,11 +11,13 @@ import {
   TIME_MODES,
 } from '../utils/constants'
 import { buildUtcFields } from '../utils/dates'
+import { DEFAULT_PAX_STATE, normalizePaxState } from '../utils/pax'
 
 const STORAGE_KEYS = {
   categories: 'app_categories',
   appointments: 'app_appointments',
   preferences: 'app_preferences',
+  pax: 'app_pax',
 }
 
 const THEMES = ['system', 'light', 'dark']
@@ -123,12 +125,13 @@ function normalizeAppointments(rawAppointments, preferences) {
 
 export function loadStoredData() {
   if (typeof localStorage === 'undefined') {
-    return { categories: null, appointments: null, preferences: null }
+    return { categories: null, appointments: null, preferences: null, pax: null }
   }
 
   const rawCategories = safeParse(localStorage.getItem(STORAGE_KEYS.categories))
   const rawAppointments = safeParse(localStorage.getItem(STORAGE_KEYS.appointments))
   const rawPreferences = safeParse(localStorage.getItem(STORAGE_KEYS.preferences))
+  const rawPax = safeParse(localStorage.getItem(STORAGE_KEYS.pax))
 
   const normalized = normalizeCategories(rawCategories)
   const categories =
@@ -161,14 +164,25 @@ export function loadStoredData() {
     localStorage.setItem(STORAGE_KEYS.preferences, JSON.stringify(preferences))
   }
 
-  return { categories, appointments, preferences }
+  const paxNormalized = normalizePaxState(rawPax ?? DEFAULT_PAX_STATE)
+  if (rawPax && paxNormalized.changed) {
+    localStorage.setItem(STORAGE_KEYS.pax, JSON.stringify(paxNormalized.state))
+  }
+
+  return {
+    categories,
+    appointments,
+    preferences,
+    pax: paxNormalized.state,
+  }
 }
 
-export function saveStoredData({ categories, appointments, preferences }) {
+export function saveStoredData({ categories, appointments, preferences, pax }) {
   if (typeof localStorage === 'undefined') return
   localStorage.setItem(STORAGE_KEYS.categories, JSON.stringify(categories))
   localStorage.setItem(STORAGE_KEYS.appointments, JSON.stringify(appointments))
   localStorage.setItem(STORAGE_KEYS.preferences, JSON.stringify(preferences))
+  localStorage.setItem(STORAGE_KEYS.pax, JSON.stringify(pax))
 }
 
 export function buildExport({ categories, appointments, preferences }) {

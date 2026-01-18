@@ -31,7 +31,7 @@ test('visual: filter drawer open', async ({ page }) => {
     () => document.documentElement.getAttribute('data-theme') === 'light',
   )
   await page.getByLabel('Open filters').click()
-  await page.waitForSelector('.drawer-content')
+  await page.waitForSelector('.drawer-content[data-state="open"]')
   await disableAnimations(page)
   await expect(page).toHaveScreenshot('filter-drawer-open.png', { fullPage: true })
 })
