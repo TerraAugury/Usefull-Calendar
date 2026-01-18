@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { buildSeedData, disableAnimations, initApp } from './helpers.js'
 
-test('visual: calendar light (mobile)', async ({ page }) => {
+test('visual: calendar light (mobile) @visual', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   const seedData = buildSeedData({ theme: 'light' })
   await initApp(page, { seedData })
@@ -12,7 +12,7 @@ test('visual: calendar light (mobile)', async ({ page }) => {
   await expect(page).toHaveScreenshot('calendar-light-mobile.png', { fullPage: true })
 })
 
-test('visual: calendar dark (desktop)', async ({ page }) => {
+test('visual: calendar dark (desktop) @visual', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
   const seedData = buildSeedData({ theme: 'dark' })
   await initApp(page, { seedData })
@@ -23,7 +23,7 @@ test('visual: calendar dark (desktop)', async ({ page }) => {
   await expect(page).toHaveScreenshot('calendar-dark-desktop.png', { fullPage: true })
 })
 
-test('visual: filter drawer open', async ({ page }) => {
+test('visual: filter drawer open @visual', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   const seedData = buildSeedData({ theme: 'light' })
   await initApp(page, { seedData })
@@ -36,7 +36,7 @@ test('visual: filter drawer open', async ({ page }) => {
   await expect(page).toHaveScreenshot('filter-drawer-open.png', { fullPage: true })
 })
 
-test('visual: appointment details dialog open', async ({ page }) => {
+test('visual: appointment details dialog open @visual', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   const seedData = buildSeedData({ theme: 'light' })
   await initApp(page, { seedData })

@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   test:
@@ -46,6 +47,28 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-preview-artifacts
+          path: |
+            playwright-report
+            test-results
+
+  visual:
+    runs-on: windows-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install
+      - run: npm run test:visual
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-visual-artifacts
           path: |
             playwright-report
             test-results

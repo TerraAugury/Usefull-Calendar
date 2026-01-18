@@ -7,9 +7,10 @@ React + Vite single-page app for managing appointments with a custom UI and loca
 - `npm run dev` - start the dev server
 - `npm run build` - production build
 - `npm test` - unit + component tests (Vitest)
-- `npm run test:e2e` - Playwright E2E tests
+- `npm run test:e2e` - Playwright E2E tests (non-visual)
 - `npm run test:all` - unit + component then E2E
 - `npm run test:visual` - visual snapshot tests (Playwright)
+- `npm run test:visual:update` - update visual snapshots
 - `npm run generate:airports` - refresh the generated airport mapping
 
 ## Playwright setup
@@ -22,10 +23,16 @@ npx playwright install --with-deps
 
 ## Visual snapshots
 
+Run visual snapshots:
+
+```bash
+npm run test:visual
+```
+
 Update snapshots when intentional UI changes are made:
 
 ```bash
-npm run test:visual -- --update-snapshots
+npx playwright test tests/e2e/visual.spec.js --update-snapshots
 ```
 
 ## Airport dataset generation
