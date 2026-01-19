@@ -1,0 +1,40 @@
+{
+  "categories": [
+    {
+      "id": "cat_import_1",
+      "name": "Imported",
+      "color": "blue",
+      "icon": "I"
+    }
+  ],
+  "appointments": [
+    {
+      "id": "apt_import_1",
+      "title": "Imported appointment",
+      "date": "2026-01-12",
+      "startTime": "09:00",
+      "endTime": "10:00",
+      "categoryId": "cat_import_1",
+      "status": "planned",
+      "createdAt": "2026-01-01T09:00:00.000Z",
+      "updatedAt": "2026-01-01T09:00:00.000Z",
+      "timeMode": "timezone",
+      "timeZone": "Europe/London",
+      "timeZoneSource": "manual",
+      "startUtcMs": 1768208400000,
+      "endUtcMs": 1768212000000
+    }
+  ],
+  "preferences": {
+    "theme": "light",
+    "showPast": false,
+    "timeMode": "timezone",
+    "calendarViewMode": "agenda",
+    "calendarGridMode": "month"
+  },
+  "pax": {
+    "selectedPaxName": null,
+    "paxNames": [],
+    "paxLocations": {}
+  }
+}

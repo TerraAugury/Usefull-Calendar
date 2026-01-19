@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useAppDispatch, useAppState } from '../state/hooks'
@@ -19,7 +19,8 @@ import { IconClose } from '../components/Icons'
 export default function SettingsScreen() {
   const { categories, appointments, preferences, pax } = useAppState()
   const dispatch = useAppDispatch()
-  const [importText, setImportText] = useState('')
+  const [importFile, setImportFile] = useState(null)
+  const [importFileName, setImportFileName] = useState('')
   const [importError, setImportError] = useState('')
   const [pendingImport, setPendingImport] = useState(null)
   const [confirmImportOpen, setConfirmImportOpen] = useState(false)
@@ -29,6 +30,7 @@ export default function SettingsScreen() {
   const [pendingTrips, setPendingTrips] = useState(null)
   const [pendingPaxNames, setPendingPaxNames] = useState([])
   const [selectPaxOpen, setSelectPaxOpen] = useState(false)
+  const importInputRef = useRef(null)
 
   const paxState = pax ?? DEFAULT_PAX_STATE
 
@@ -87,15 +89,56 @@ export default function SettingsScreen() {
     }
   }
 
-  const handleImportCheck = () => {
-    const parsed = parseImport(importText)
-    if (!parsed) {
-      setImportError('Invalid JSON. Nothing was imported.')
+  const resetImportSelection = () => {
+    setImportFile(null)
+    setImportFileName('')
+    if (importInputRef.current) {
+      importInputRef.current.value = ''
+    }
+  }
+
+  const readFileAsText = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result ?? '')
+      reader.onerror = () => reject(new Error('File read failed'))
+      reader.readAsText(file)
+    })
+
+  const handleImportFileChange = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const name = file.name.toLowerCase()
+    const isJson = name.endsWith('.json') || file.type === 'application/json'
+    if (!isJson) {
+      setImportError('Please choose a .json file.')
+      resetImportSelection()
       return
     }
     setImportError('')
-    setPendingImport(parsed)
-    setConfirmImportOpen(true)
+    setImportFile(file)
+    setImportFileName(file.name)
+  }
+
+  const handleImportCheck = async () => {
+    if (!importFile) return
+    try {
+      const text = await readFileAsText(importFile)
+      const parsed = parseImport(typeof text === 'string' ? text : '')
+      if (!parsed) {
+        setImportError('Invalid JSON file. Nothing was imported.')
+        dispatch({ type: 'SET_TOAST', message: 'Invalid JSON file.' })
+        resetImportSelection()
+        return
+      }
+      setImportError('')
+      setPendingImport(parsed)
+      setConfirmImportOpen(true)
+    } catch {
+      setImportError('Unable to read the JSON file.')
+      dispatch({ type: 'SET_TOAST', message: 'Unable to read the JSON file.' })
+      resetImportSelection()
+    }
   }
 
   const handleTripFile = async (event) => {
@@ -234,20 +277,35 @@ export default function SettingsScreen() {
       </div>
 
       <div className="form-field">
-        <label className="form-label" htmlFor="import">
+        <label className="form-label" htmlFor="import-file">
           Import JSON
         </label>
-        <textarea
-          id="import"
-          value={importText}
-          onChange={(event) => {
-            setImportText(event.target.value)
-            if (importError) setImportError('')
-          }}
-          placeholder="Paste exported JSON here"
+        <input
+          ref={importInputRef}
+          id="import-file"
+          className="sr-only"
+          type="file"
+          accept="application/json,.json"
+          onChange={handleImportFileChange}
         />
+        <button
+          className="btn btn-secondary"
+          type="button"
+          onClick={() => importInputRef.current?.click()}
+        >
+          Choose JSON file...
+        </button>
+        {importFileName ? (
+          <p className="helper-text">Selected: {importFileName}</p>
+        ) : null}
+        <p className="helper-text">Importing will overwrite your current data.</p>
         {importError ? <span className="form-error">{importError}</span> : null}
-        <button className="btn btn-primary" type="button" onClick={handleImportCheck}>
+        <button
+          className="btn btn-primary"
+          type="button"
+          onClick={handleImportCheck}
+          disabled={!importFile}
+        >
           Import JSON
         </button>
       </div>
@@ -293,16 +351,29 @@ export default function SettingsScreen() {
 
       <ConfirmDialog
         open={confirmImportOpen}
-        onOpenChange={setConfirmImportOpen}
+        onOpenChange={(open) => {
+          setConfirmImportOpen(open)
+          if (!open) {
+            setPendingImport(null)
+          }
+        }}
         title="Overwrite all data?"
-        description="Importing will replace current categories and appointments."
+        description="Importing will overwrite your current data."
         confirmLabel="Overwrite"
         destructive
         onConfirm={() => {
           if (!pendingImport) return
           dispatch({ type: 'IMPORT_STATE', values: pendingImport })
+          const appointmentCount = pendingImport.appointments.length
+          const categoryCount = pendingImport.categories.length
+          const paxCount = pendingImport.pax?.paxNames?.length ?? 0
+          const paxText = paxCount ? `, ${paxCount} passengers` : ''
+          dispatch({
+            type: 'SET_TOAST',
+            message: `Imported ${appointmentCount} appointments, ${categoryCount} categories${paxText}.`,
+          })
           setConfirmImportOpen(false)
-          setImportText('')
+          resetImportSelection()
           setPendingImport(null)
         }}
       />

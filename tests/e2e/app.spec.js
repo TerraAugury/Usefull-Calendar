@@ -33,6 +33,25 @@ test('smoke: load sample data and edit an appointment', async ({ page }) => {
   await expect(page.getByText('Updated project sync')).toBeVisible()
 })
 
+test('settings import JSON file overwrites data', async ({ page }) => {
+  await initApp(page)
+
+  await page.getByRole('button', { name: 'Settings' }).click()
+  const importInput = page.locator('input#import-file')
+  await importInput.setInputFiles('tests/fixtures/import.json')
+  const importButton = page.locator('button', { hasText: 'Import JSON' })
+  await expect(importButton).toBeEnabled()
+  await importButton.click()
+
+  const confirmDialog = page.getByRole('dialog', { name: /overwrite all data/i })
+  await expect(confirmDialog).toBeVisible()
+  await confirmDialog.getByRole('button', { name: 'Overwrite' }).click()
+  await expect(confirmDialog).not.toBeVisible()
+
+  await page.getByRole('button', { name: 'Calendar' }).click()
+  await expect(page.getByText('Imported appointment')).toBeVisible()
+})
+
 test('add flow: new appointment returns to calendar and appears upcoming', async ({ page }) => {
   const seedData = buildSeedData()
   await initApp(page, { seedData })
