@@ -74,7 +74,7 @@ describe('Calendar view switcher', () => {
     expect(container.querySelector('.agenda')).toBeInTheDocument()
 
     await act(async () => {
-      await user.click(screen.getByLabelText(/open filters/i))
+      await user.click(screen.getByLabelText(/More options/i))
     })
     const drawer = screen.getByRole('dialog', { name: 'Filters' })
     await act(async () => {
@@ -87,7 +87,7 @@ describe('Calendar view switcher', () => {
     expect(container.querySelector('.calendar-grid')).toBeInTheDocument()
 
     await act(async () => {
-      await user.click(screen.getByLabelText(/open filters/i))
+      await user.click(screen.getByLabelText(/More options/i))
     })
     const drawerWeek = screen.getByRole('dialog', { name: 'Filters' })
     await act(async () => {
@@ -258,7 +258,7 @@ describe('Calendar view switcher', () => {
     expect(screen.getByText('Future item')).toBeInTheDocument()
 
     await act(async () => {
-      await user.click(screen.getByLabelText(/open filters/i))
+      await user.click(screen.getByLabelText(/More options/i))
     })
     await act(async () => {
       await user.click(screen.getByRole('button', { name: /show past appointments/i }))
@@ -332,7 +332,7 @@ describe('Calendar view switcher', () => {
     expect(pastDay.querySelector('.calendar-dot')).toBeNull()
 
     await act(async () => {
-      await user.click(screen.getByLabelText(/open filters/i))
+      await user.click(screen.getByLabelText(/More options/i))
     })
     await act(async () => {
       await user.click(screen.getByRole('button', { name: /show past appointments/i }))

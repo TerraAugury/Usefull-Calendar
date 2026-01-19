@@ -29,7 +29,7 @@ describe('Filter drawer', () => {
     const user = userEvent.setup()
     await renderWithState(baseState)
 
-    const trigger = screen.getByLabelText(/open filters/i)
+    const trigger = screen.getByLabelText(/More options/i)
     expect(trigger.querySelector('.badge-dot')).toBeNull()
 
     await act(async () => {

@@ -88,7 +88,7 @@ describe('Calendar past toggle', () => {
     await renderWithState(state)
 
     await act(async () => {
-      await user.click(screen.getByLabelText(/open filters/i))
+      await user.click(screen.getByLabelText(/More options/i))
     })
     await act(async () => {
       await user.click(screen.getByRole('button', { name: /show past appointments/i }))

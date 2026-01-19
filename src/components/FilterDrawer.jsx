@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import CalendarViewSwitcher from './CalendarViewSwitcher'
-import { IconClose, IconMenu } from './Icons'
+import { IconClose, IconMore } from './Icons'
 
 export default function FilterDrawer({
   filters,
@@ -47,8 +47,8 @@ export default function FilterDrawer({
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
-        <button className="icon-button" type="button" aria-label="Open filters">
-          <IconMenu className="tab-icon" />
+        <button className="icon-button" type="button" aria-label="More options">
+          <IconMore className="tab-icon" />
           {active ? <span className="badge-dot" /> : null}
         </button>
       </Dialog.Trigger>

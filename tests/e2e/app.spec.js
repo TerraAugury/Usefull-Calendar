@@ -91,7 +91,8 @@ test('calendar grid opens day sheet with appointments', async ({ page }) => {
   const seedData = buildSeedData()
   await initApp(page, { seedData })
 
-  await page.getByLabel('Open filters').click()
+  await expect(page.getByLabel('More options')).toBeVisible()
+  await page.getByLabel('More options').click()
   const drawer = page.getByRole('dialog', { name: 'Filters' })
   await expect(drawer).toBeVisible()
   await drawer.getByRole('button', { name: 'Calendar' }).click()
@@ -113,7 +114,8 @@ test('calendar grid fits mobile viewport without horizontal scroll', async ({ pa
   }
   await initApp(page, { seedData })
 
-  await page.getByLabel('Open filters').click()
+  await expect(page.getByLabel('More options')).toBeVisible()
+  await page.getByLabel('More options').click()
   const drawer = page.getByRole('dialog', { name: 'Filters' })
   await expect(drawer).toBeVisible()
   await expect(drawer.getByRole('button', { name: 'Agenda' })).toBeVisible()
@@ -141,7 +143,7 @@ test('calendar grid fits mobile viewport without horizontal scroll', async ({ pa
   }))
   expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1)
 
-  await page.getByLabel('Open filters').click()
+  await page.getByLabel('More options').click()
   const weekDrawer = page.getByRole('dialog', { name: 'Filters' })
   await expect(weekDrawer).toBeVisible()
   await weekDrawer.getByRole('button', { name: 'Week' }).click()

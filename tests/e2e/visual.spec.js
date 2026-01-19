@@ -33,7 +33,7 @@ test('visual: filter drawer open @visual', async ({ page }) => {
   await page.waitForFunction(
     () => document.documentElement.getAttribute('data-theme') === 'light',
   )
-  await page.getByLabel('Open filters').click()
+  await page.getByLabel('More options').click()
   const drawer = page.locator('.drawer-content[data-state="open"]')
   await drawer.waitFor({ state: 'visible' })
   await drawer.evaluate((node) => {

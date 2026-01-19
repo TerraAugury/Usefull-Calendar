@@ -33,10 +33,12 @@ export function IconSettings(props) {
   )
 }
 
-export function IconMenu(props) {
+export function IconMore(props) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-      <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="6" cy="12" r="1.6" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+      <circle cx="18" cy="12" r="1.6" fill="currentColor" />
     </svg>
   )
 }

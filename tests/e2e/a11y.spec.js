@@ -23,7 +23,7 @@ test('a11y: calendar screen', async ({ page }) => {
 test('a11y: filter drawer', async ({ page }) => {
   const seedData = buildSeedData()
   await initApp(page, { seedData })
-  await page.getByLabel('Open filters').click()
+  await page.getByLabel('More options').click()
   await page.waitForSelector('.drawer-content')
   await expectNoSeriousViolations(page, '.drawer-content')
 })
