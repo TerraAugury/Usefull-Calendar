@@ -1,8 +1,6 @@
-import { render } from '@testing-library/react'
 import { vi } from 'vitest'
-import CalendarScreen from '../screens/CalendarScreen'
-import { AppStateProvider } from '../state/AppState'
 import { DEFAULT_FILTERS, EMPTY_DRAFT } from '../utils/constants'
+import { renderWithState } from './renderUtils'
 
 const categories = [
   { id: 'cat-1', name: 'General', color: 'blue', icon: '\u{1F5D3}\uFE0F' },
@@ -23,6 +21,7 @@ const appointments = [
     updatedAt: '2026-01-01T08:00:00.000Z',
     timeMode: 'timezone',
     timeZone: 'Europe/London',
+    timeZoneSource: 'manual',
     startUtcMs: Date.UTC(2026, 0, 10, 9, 0),
   },
   {
@@ -39,6 +38,7 @@ const appointments = [
     updatedAt: '2026-01-01T08:00:00.000Z',
     timeMode: 'timezone',
     timeZone: 'Europe/London',
+    timeZoneSource: 'manual',
     startUtcMs: Date.UTC(2026, 0, 11, 11, 0),
   },
   {
@@ -55,6 +55,7 @@ const appointments = [
     updatedAt: '2026-01-01T08:00:00.000Z',
     timeMode: 'timezone',
     timeZone: 'Europe/London',
+    timeZoneSource: 'manual',
     startUtcMs: Date.UTC(2026, 0, 12, 8, 0),
   },
 ]
@@ -85,24 +86,16 @@ describe('Calendar sections', () => {
     vi.useRealTimers()
   })
 
-  it('shows upcoming before past when enabled', () => {
-    const { container } = render(
-      <AppStateProvider initialState={buildState(true)}>
-        <CalendarScreen />
-      </AppStateProvider>,
-    )
+  it('shows upcoming before past when enabled', async () => {
+    const { container } = await renderWithState(buildState(true))
 
     const labels = container.querySelectorAll('.section-label')
     expect(labels[0]?.textContent).toBe('Upcoming')
     expect(labels[1]?.textContent).toBe('Past')
   })
 
-  it('starts with the next upcoming appointment by default', () => {
-    const { container } = render(
-      <AppStateProvider initialState={buildState(false)}>
-        <CalendarScreen />
-      </AppStateProvider>,
-    )
+  it('starts with the next upcoming appointment by default', async () => {
+    const { container } = await renderWithState(buildState(false))
 
     const cards = container.querySelectorAll('.appointment-card')
     expect(cards).toHaveLength(2)

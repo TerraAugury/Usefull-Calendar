@@ -1,9 +1,8 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import CategoriesScreen from '../screens/CategoriesScreen'
-import { AppStateProvider } from '../state/AppState'
 import { getDefaultCategories } from '../data/sampleData'
 import { DEFAULT_FILTERS, EMPTY_DRAFT } from '../utils/constants'
+import { renderWithState } from './renderUtils'
 
 describe('category icon picker', () => {
   it('adds a category with a chosen emoji icon', async () => {
@@ -14,7 +13,7 @@ describe('category icon picker', () => {
     const initialState = {
       categories,
       appointments: [],
-      preferences: { theme: 'system', showPast: false, timeMode: 'local' },
+      preferences: { theme: 'system', showPast: false, timeMode: 'timezone' },
       ui: {
         tab: 'categories',
         filters: { ...DEFAULT_FILTERS },
@@ -24,11 +23,7 @@ describe('category icon picker', () => {
       },
     }
 
-    render(
-      <AppStateProvider initialState={initialState}>
-        <CategoriesScreen />
-      </AppStateProvider>,
-    )
+    await renderWithState(initialState)
 
     await act(async () => {
       await user.type(screen.getByLabelText(/name/i), 'Cafe')

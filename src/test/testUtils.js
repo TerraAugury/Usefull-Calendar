@@ -1,10 +1,9 @@
-const STORAGE_KEYS = [
-  'app_categories',
-  'app_appointments',
-  'app_preferences',
-  'app_pax',
-]
-
-export function resetStorage() {
-  STORAGE_KEYS.forEach((key) => localStorage.removeItem(key))
+export async function resetStorage() {
+  if (typeof indexedDB === 'undefined') return
+  await new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase('CalendarDB')
+    request.onsuccess = () => resolve()
+    request.onerror = () => reject(request.error)
+    request.onblocked = () => resolve()
+  })
 }

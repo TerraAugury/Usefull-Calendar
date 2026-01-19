@@ -1,4 +1,5 @@
 import { buildUtcFields } from '../utils/dates'
+import { DEFAULT_TIME_ZONE, TIME_MODES } from '../utils/constants'
 
 const ICONS = {
   general: '\u{1F5D3}\uFE0F',
@@ -72,11 +73,19 @@ export function getDefaultCategories() {
   return CATEGORY_SEED.map((category) => ({ ...category }))
 }
 
-export function getSampleAppointments(categories, now = new Date()) {
+export function getSampleAppointments(categories, now = new Date(), options = {}) {
   const base = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const date = (offset) => formatDate(addDays(base, offset))
   const createdAt = (offset, time) => localISO(base, offset, time)
-  const timeMode = 'local'
+  const timeMode = TIME_MODES.includes(options.timeMode)
+    ? options.timeMode
+    : 'timezone'
+  const timeZone =
+    timeMode === 'timezone'
+      ? typeof options.timeZone === 'string' && options.timeZone.trim()
+        ? options.timeZone.trim()
+        : DEFAULT_TIME_ZONE
+      : null
 
   const generalId = findCategoryId(categories, 'general')
   const doctorsId = findCategoryId(categories, 'doctors')
@@ -289,8 +298,13 @@ export function getSampleAppointments(categories, now = new Date()) {
       startTime: appointment.startTime,
       endTime: appointment.endTime,
       timeMode,
+      timeZone,
     })
     const next = { ...appointment, timeMode, startUtcMs }
+    if (timeMode === 'timezone') {
+      next.timeZone = timeZone
+      next.timeZoneSource = 'manual'
+    }
     if (appointment.endTime) {
       next.endUtcMs = endUtcMs
     }

@@ -1,13 +1,12 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import CalendarScreen from '../screens/CalendarScreen'
-import { AppStateProvider } from '../state/AppState'
 import { DEFAULT_FILTERS } from '../utils/constants'
+import { renderWithState } from './renderUtils'
 
 const baseState = {
   categories: [{ id: 'cat-1', name: 'General', color: 'blue', icon: '\u{1F5D3}\uFE0F' }],
   appointments: [],
-  preferences: { theme: 'system', showPast: false, timeMode: 'local' },
+  preferences: { theme: 'system', showPast: false, timeMode: 'timezone' },
   ui: {
     tab: 'calendar',
     filters: { ...DEFAULT_FILTERS },
@@ -28,11 +27,7 @@ const baseState = {
 describe('Filter drawer', () => {
   it('resets filters from the drawer', async () => {
     const user = userEvent.setup()
-    render(
-      <AppStateProvider initialState={baseState}>
-        <CalendarScreen />
-      </AppStateProvider>,
-    )
+    await renderWithState(baseState)
 
     const trigger = screen.getByLabelText(/open filters/i)
     expect(trigger.querySelector('.badge-dot')).toBeNull()

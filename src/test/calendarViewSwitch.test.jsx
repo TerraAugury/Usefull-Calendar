@@ -1,10 +1,9 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
-import CalendarScreen from '../screens/CalendarScreen'
-import { AppStateProvider } from '../state/AppState'
-import { DEFAULT_FILTERS, EMPTY_DRAFT } from '../utils/constants'
+import { DEFAULT_FILTERS, DEFAULT_TIME_ZONE, EMPTY_DRAFT } from '../utils/constants'
 import { buildUtcFields } from '../utils/dates'
+import { renderWithState } from './renderUtils'
 
 function buildState(overrides = {}) {
   const { preferences: preferenceOverrides, ...rest } = overrides
@@ -18,7 +17,7 @@ function buildState(overrides = {}) {
     preferences: {
       theme: 'system',
       showPast: false,
-      timeMode: 'local',
+      timeMode: 'timezone',
       calendarViewMode: 'agenda',
       calendarGridMode: 'month',
       ...preferenceOverrides,
@@ -35,6 +34,8 @@ function buildState(overrides = {}) {
 }
 
 describe('Calendar view switcher', () => {
+  const timeZone = DEFAULT_TIME_ZONE
+
   it('switches between agenda and calendar views', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date(2026, 0, 10, 9, 0, 0, 0))
@@ -43,38 +44,38 @@ describe('Calendar view switcher', () => {
       date: '2026-01-11',
       startTime: '09:00',
       endTime: '',
-      timeMode: 'local',
+      timeMode: 'timezone',
+      timeZone,
     }).startUtcMs
-    const { container } = render(
-      <AppStateProvider
-        initialState={buildState({
-          appointments: [
-            {
-              id: 'apt-1',
-              title: 'Upcoming',
-              date: '2026-01-11',
-              startTime: '09:00',
-              endTime: '',
-              categoryId: 'cat-1',
-              location: '',
-              notes: '',
-              status: 'planned',
-              createdAt: '2026-01-01T08:00:00.000Z',
-              updatedAt: '2026-01-01T08:00:00.000Z',
-              timeMode: 'local',
-              startUtcMs: appointmentTime,
-            },
-          ],
-        })}
-      >
-        <CalendarScreen />
-      </AppStateProvider>,
+    const { container } = await renderWithState(
+      buildState({
+        appointments: [
+          {
+            id: 'apt-1',
+            title: 'Upcoming',
+            date: '2026-01-11',
+            startTime: '09:00',
+            endTime: '',
+            categoryId: 'cat-1',
+            location: '',
+            notes: '',
+            status: 'planned',
+            createdAt: '2026-01-01T08:00:00.000Z',
+            updatedAt: '2026-01-01T08:00:00.000Z',
+            timeMode: 'timezone',
+            timeZone,
+            timeZoneSource: 'manual',
+            startUtcMs: appointmentTime,
+          },
+        ],
+      }),
     )
 
     expect(container.querySelector('.agenda')).toBeInTheDocument()
 
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: 'Calendar' }))
+      const viewGroup = screen.getByRole('group', { name: 'Calendar view' })
+      await user.click(within(viewGroup).getByRole('button', { name: 'Calendar' }))
     })
 
     expect(container.querySelector('.calendar-grid')).toBeInTheDocument()
@@ -95,7 +96,8 @@ describe('Calendar view switcher', () => {
       date: '2026-01-10',
       startTime: '10:00',
       endTime: '',
-      timeMode: 'local',
+      timeMode: 'timezone',
+      timeZone,
     }).startUtcMs
     const state = buildState({
       appointments: [
@@ -111,18 +113,16 @@ describe('Calendar view switcher', () => {
           status: 'planned',
           createdAt: '2026-01-01T08:00:00.000Z',
           updatedAt: '2026-01-01T08:00:00.000Z',
-          timeMode: 'local',
+          timeMode: 'timezone',
+          timeZone,
+          timeZoneSource: 'manual',
           startUtcMs: appointmentTime,
         },
       ],
       preferences: { calendarViewMode: 'calendar', calendarGridMode: 'month' },
     })
 
-    const { container } = render(
-      <AppStateProvider initialState={state}>
-        <CalendarScreen />
-      </AppStateProvider>,
-    )
+    const { container } = await renderWithState(state)
 
     const dayButton = container.querySelector('[data-date="2026-01-10"]')
     expect(dayButton).toBeInTheDocument()
@@ -143,7 +143,8 @@ describe('Calendar view switcher', () => {
       date: '2026-01-10',
       startTime: '10:00',
       endTime: '',
-      timeMode: 'local',
+      timeMode: 'timezone',
+      timeZone,
     }).startUtcMs
     const state = buildState({
       appointments: [
@@ -159,18 +160,16 @@ describe('Calendar view switcher', () => {
           status: 'planned',
           createdAt: '2026-01-01T08:00:00.000Z',
           updatedAt: '2026-01-01T08:00:00.000Z',
-          timeMode: 'local',
+          timeMode: 'timezone',
+          timeZone,
+          timeZoneSource: 'manual',
           startUtcMs: appointmentTime,
         },
       ],
       preferences: { calendarViewMode: 'calendar', calendarGridMode: 'week' },
     })
 
-    render(
-      <AppStateProvider initialState={state}>
-        <CalendarScreen />
-      </AppStateProvider>,
-    )
+    await renderWithState(state)
 
     expect(screen.getByText('Appointments this week')).toBeInTheDocument()
 
@@ -190,13 +189,15 @@ describe('Calendar view switcher', () => {
       date: '2026-01-10',
       startTime: '08:00',
       endTime: '',
-      timeMode: 'local',
+      timeMode: 'timezone',
+      timeZone,
     }).startUtcMs
     const futureTime = buildUtcFields({
       date: '2026-01-10',
       startTime: '10:00',
       endTime: '',
-      timeMode: 'local',
+      timeMode: 'timezone',
+      timeZone,
     }).startUtcMs
     const state = buildState({
       appointments: [
@@ -212,7 +213,9 @@ describe('Calendar view switcher', () => {
           status: 'done',
           createdAt: '2026-01-01T08:00:00.000Z',
           updatedAt: '2026-01-01T08:00:00.000Z',
-          timeMode: 'local',
+          timeMode: 'timezone',
+          timeZone,
+          timeZoneSource: 'manual',
           startUtcMs: pastTime,
         },
         {
@@ -227,18 +230,16 @@ describe('Calendar view switcher', () => {
           status: 'planned',
           createdAt: '2026-01-01T08:00:00.000Z',
           updatedAt: '2026-01-01T08:00:00.000Z',
-          timeMode: 'local',
+          timeMode: 'timezone',
+          timeZone,
+          timeZoneSource: 'manual',
           startUtcMs: futureTime,
         },
       ],
       preferences: { calendarViewMode: 'calendar', calendarGridMode: 'week' },
     })
 
-    render(
-      <AppStateProvider initialState={state}>
-        <CalendarScreen />
-      </AppStateProvider>,
-    )
+    await renderWithState(state)
 
     expect(screen.queryByText('Past item')).toBeNull()
     expect(screen.getByText('Future item')).toBeInTheDocument()
@@ -262,13 +263,15 @@ describe('Calendar view switcher', () => {
       date: '2026-01-09',
       startTime: '09:00',
       endTime: '',
-      timeMode: 'local',
+      timeMode: 'timezone',
+      timeZone,
     }).startUtcMs
     const futureTime = buildUtcFields({
       date: '2026-01-11',
       startTime: '09:00',
       endTime: '',
-      timeMode: 'local',
+      timeMode: 'timezone',
+      timeZone,
     }).startUtcMs
     const state = buildState({
       appointments: [
@@ -284,7 +287,9 @@ describe('Calendar view switcher', () => {
           status: 'done',
           createdAt: '2026-01-01T08:00:00.000Z',
           updatedAt: '2026-01-01T08:00:00.000Z',
-          timeMode: 'local',
+          timeMode: 'timezone',
+          timeZone,
+          timeZoneSource: 'manual',
           startUtcMs: pastTime,
         },
         {
@@ -299,18 +304,16 @@ describe('Calendar view switcher', () => {
           status: 'planned',
           createdAt: '2026-01-01T08:00:00.000Z',
           updatedAt: '2026-01-01T08:00:00.000Z',
-          timeMode: 'local',
+          timeMode: 'timezone',
+          timeZone,
+          timeZoneSource: 'manual',
           startUtcMs: futureTime,
         },
       ],
       preferences: { calendarViewMode: 'calendar', calendarGridMode: 'month' },
     })
 
-    const { container } = render(
-      <AppStateProvider initialState={state}>
-        <CalendarScreen />
-      </AppStateProvider>,
-    )
+    const { container } = await renderWithState(state)
 
     const pastDay = container.querySelector('[data-date="2026-01-09"]')
     expect(pastDay.querySelector('.calendar-dot')).toBeNull()

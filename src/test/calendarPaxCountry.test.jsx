@@ -1,8 +1,7 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { vi } from 'vitest'
-import CalendarScreen from '../screens/CalendarScreen'
-import { AppStateProvider } from '../state/AppState'
 import { DEFAULT_FILTERS, EMPTY_DRAFT } from '../utils/constants'
+import { renderWithState } from './renderUtils'
 
 describe('Calendar pax country labels', () => {
   beforeEach(() => {
@@ -14,7 +13,7 @@ describe('Calendar pax country labels', () => {
     vi.useRealTimers()
   })
 
-  it('renders country label with flag for a selected pax', () => {
+  it('renders country label with flag for a selected pax', async () => {
     const categories = [
       { id: 'cat-1', name: 'General', color: 'blue', icon: '\u{1F5D3}\uFE0F' },
     ]
@@ -44,7 +43,7 @@ describe('Calendar pax country labels', () => {
       preferences: {
         theme: 'system',
         showPast: true,
-        timeMode: 'local',
+        timeMode: 'timezone',
         calendarViewMode: 'calendar',
         calendarGridMode: 'month',
       },
@@ -58,11 +57,7 @@ describe('Calendar pax country labels', () => {
       },
     }
 
-    render(
-      <AppStateProvider initialState={state}>
-        <CalendarScreen />
-      </AppStateProvider>,
-    )
+    await renderWithState(state)
 
     expect(screen.getAllByText('France').length).toBeGreaterThan(0)
     expect(screen.getAllByRole('img', { name: 'Flag of France' }).length).toBeGreaterThan(0)

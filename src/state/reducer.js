@@ -1,7 +1,6 @@
 import { DEFAULT_FILTERS, EMPTY_DRAFT } from '../utils/constants'
 import { getDefaultCategories, getDefaultCategoryIcon } from '../data/sampleData'
 import { createId } from '../utils/id'
-import { loadStoredData } from '../storage/storage'
 import { DEFAULT_PAX_STATE } from '../utils/pax'
 
 function buildDefaultCategories() {
@@ -14,17 +13,16 @@ function buildDraft(categories) {
 }
 
 export function createInitialState() {
-  const stored = loadStoredData()
-  const categories = stored.categories ?? buildDefaultCategories()
-  const appointments = stored.appointments ?? []
-  const preferences = stored.preferences ?? {
+  const categories = buildDefaultCategories()
+  const appointments = []
+  const preferences = {
     theme: 'system',
     showPast: false,
-    timeMode: 'local',
+    timeMode: 'timezone',
     calendarViewMode: 'agenda',
     calendarGridMode: 'month',
   }
-  const pax = stored.pax ?? { ...DEFAULT_PAX_STATE, paxLocations: {} }
+  const pax = { ...DEFAULT_PAX_STATE, paxLocations: {} }
   return {
     categories,
     appointments,
@@ -54,6 +52,20 @@ export function reducer(state, action) {
   switch (action.type) {
     case 'SET_TAB':
       return { ...state, ui: { ...state.ui, tab: action.tab } }
+    case 'HYDRATE_STATE': {
+      const categories = action.values.categories ?? state.categories
+      return {
+        ...state,
+        categories,
+        appointments: action.values.appointments ?? state.appointments,
+        preferences: action.values.preferences ?? state.preferences,
+        pax: action.values.pax ?? state.pax,
+        ui: {
+          ...state.ui,
+          addDraft: ensureDraftCategory(state.ui.addDraft, categories),
+        },
+      }
+    }
     case 'SET_FILTERS':
       return {
         ...state,
@@ -131,7 +143,7 @@ export function reducer(state, action) {
     case 'SET_PREFERENCES':
       return {
         ...state,
-        preferences: { ...state.preferences, ...action.values },
+        preferences: { ...state.preferences, ...action.values, timeMode: 'timezone' },
       }
     case 'SET_PAX_STATE':
       return {
@@ -157,7 +169,7 @@ export function reducer(state, action) {
         categories,
         appointments: action.values.appointments,
         preferences: action.values.preferences,
-        pax: { ...DEFAULT_PAX_STATE, paxLocations: {} },
+        pax: action.values.pax ?? { ...DEFAULT_PAX_STATE, paxLocations: {} },
         ui: {
           ...state.ui,
           addDraft: buildDraft(categories),
@@ -214,7 +226,7 @@ export function reducer(state, action) {
         preferences: {
           theme: 'system',
           showPast: false,
-          timeMode: 'local',
+          timeMode: 'timezone',
           calendarViewMode: 'agenda',
           calendarGridMode: 'month',
         },

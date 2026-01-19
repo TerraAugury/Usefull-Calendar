@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import AppointmentForm from '../components/AppointmentForm'
 import { useAppDispatch, useAppState } from '../state/hooks'
 import { TIMEZONE_OPTIONS } from '../utils/constants'
@@ -12,14 +12,43 @@ import {
   isAppointmentStartInPast,
   validateAppointmentInput,
 } from '../utils/validation'
+import { DEFAULT_PAX_STATE } from '../utils/pax'
+import { resolveTimeZoneState } from '../utils/timezone'
 
 export default function AddScreen() {
-  const { ui, categories, preferences } = useAppState()
+  const { ui, categories, preferences, pax } = useAppState()
   const dispatch = useAppDispatch()
   const [errors, setErrors] = useState({})
+  const [forceTimeZonePicker, setForceTimeZonePicker] = useState(false)
   const now = new Date()
-  const timeMode = preferences.timeMode ?? 'local'
-  const timeZone = ui.addDraft.timeZone
+  const timeMode = preferences.timeMode ?? 'timezone'
+  const paxState = pax ?? DEFAULT_PAX_STATE
+  const selectedPaxName = paxState.selectedPaxName
+  const paxFlights = useMemo(() => {
+    if (!selectedPaxName) return []
+    return paxState.paxLocations?.[selectedPaxName]?.flights ?? []
+  }, [paxState.paxLocations, selectedPaxName])
+  const resolvedTimeZone = useMemo(
+    () =>
+      resolveTimeZoneState({
+        timeMode,
+        dateStr: ui.addDraft.date,
+        paxFlights,
+        currentTimeZone: ui.addDraft.timeZone,
+        currentSource: ui.addDraft.timeZoneSource,
+      }),
+    [
+      timeMode,
+      ui.addDraft.date,
+      ui.addDraft.timeZone,
+      ui.addDraft.timeZoneSource,
+      paxFlights,
+    ],
+  )
+  const timeZone =
+    timeMode === 'timezone' ? resolvedTimeZone.timeZone : ''
+  const timeZoneSource =
+    timeMode === 'timezone' ? resolvedTimeZone.source : ''
   const today = getTodayYYYYMMDD({ mode: timeMode, timeZone, now })
   const dateMin = today
   const isToday = today && ui.addDraft.date === today
@@ -30,8 +59,14 @@ export default function AddScreen() {
       : ''
   const endTimeMin = ui.addDraft.startTime || ''
   const dateBeforeMin = ui.addDraft.date && dateMin && ui.addDraft.date < dateMin
-  const startInPast = isAppointmentStartInPast(ui.addDraft, now, timeMode)
-  const submitBlocked = startInPast || dateBeforeMin
+  const draftForValidation = {
+    ...ui.addDraft,
+    timeZone,
+    timeZoneSource,
+  }
+  const startInPast = isAppointmentStartInPast(draftForValidation, now, timeMode)
+  const missingTimeZone = timeMode === 'timezone' && !timeZone
+  const submitBlocked = startInPast || dateBeforeMin || missingTimeZone
   const visibleErrors = { ...errors }
   if (startInPast && !visibleErrors.startTime) {
     visibleErrors.startTime = 'Appointments cannot be in the past.'
@@ -39,6 +74,51 @@ export default function AddScreen() {
   const dateWarning = dateBeforeMin
     ? 'Past appointments cannot be saved. Choose a future date/time.'
     : ''
+
+  useEffect(() => {
+    if (timeMode !== 'timezone') {
+      if (ui.addDraft.timeZone || ui.addDraft.timeZoneSource) {
+        dispatch({
+          type: 'SET_ADD_DRAFT',
+          values: { timeZone: '', timeZoneSource: '' },
+        })
+      }
+      if (forceTimeZonePicker) {
+        setForceTimeZonePicker(false)
+      }
+      return
+    }
+    if (
+      resolvedTimeZone.timeZone &&
+      (resolvedTimeZone.timeZone !== ui.addDraft.timeZone ||
+        resolvedTimeZone.source !== ui.addDraft.timeZoneSource)
+    ) {
+      dispatch({
+        type: 'SET_ADD_DRAFT',
+        values: {
+          timeZone: resolvedTimeZone.timeZone,
+          timeZoneSource: resolvedTimeZone.source,
+        },
+      })
+    }
+    if (
+      !resolvedTimeZone.timeZone &&
+      (ui.addDraft.timeZone || ui.addDraft.timeZoneSource)
+    ) {
+      dispatch({
+        type: 'SET_ADD_DRAFT',
+        values: { timeZone: '', timeZoneSource: '' },
+      })
+    }
+  }, [
+    timeMode,
+    resolvedTimeZone.timeZone,
+    resolvedTimeZone.source,
+    ui.addDraft.timeZone,
+    ui.addDraft.timeZoneSource,
+    dispatch,
+    forceTimeZonePicker,
+  ])
 
   useEffect(() => {
     const startMinutes = timeStringToMinutes(ui.addDraft.startTime)
@@ -53,7 +133,12 @@ export default function AddScreen() {
   }, [ui.addDraft.startTime, ui.addDraft.endTime, dispatch])
 
   const handleSubmit = () => {
-    const nextErrors = validateAppointmentInput(ui.addDraft, categories, now, timeMode)
+    const nextErrors = validateAppointmentInput(
+      draftForValidation,
+      categories,
+      now,
+      timeMode,
+    )
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors)
       return
@@ -63,18 +148,19 @@ export default function AddScreen() {
       startTime: ui.addDraft.startTime,
       endTime: ui.addDraft.endTime,
       timeMode,
-      timeZone: ui.addDraft.timeZone,
+      timeZone,
     })
     if (!Number.isFinite(startUtcMs)) {
       setErrors({ startTime: 'Appointments cannot be in the past.' })
       return
     }
-    const payload = { ...ui.addDraft, timeMode, startUtcMs }
+    const payload = { ...ui.addDraft, timeMode, timeZone, timeZoneSource, startUtcMs }
     if (ui.addDraft.endTime) {
       payload.endUtcMs = endUtcMs
     }
     if (timeMode !== 'timezone') {
       delete payload.timeZone
+      delete payload.timeZoneSource
     }
     dispatch({ type: 'ADD_APPOINTMENT', values: payload })
     dispatch({ type: 'RESET_ADD_DRAFT' })
@@ -88,15 +174,28 @@ export default function AddScreen() {
         <h1 className="screen-title">Add appointment</h1>
       </header>
       <AppointmentForm
-        values={ui.addDraft}
+        values={draftForValidation}
         errors={visibleErrors}
         categories={categories}
-        onChange={(values) => dispatch({ type: 'SET_ADD_DRAFT', values })}
+        onChange={(values) => {
+          if (
+            Object.prototype.hasOwnProperty.call(values, 'timeZone') &&
+            values.timeZone
+          ) {
+            setForceTimeZonePicker(false)
+          }
+          dispatch({ type: 'SET_ADD_DRAFT', values })
+        }}
         onSubmit={handleSubmit}
         submitLabel="Save appointment"
         submitDisabled={submitBlocked}
         showTimeZone={timeMode === 'timezone'}
         timeZones={TIMEZONE_OPTIONS}
+        showTimeZonePicker={
+          timeMode === 'timezone' && (forceTimeZonePicker || !timeZone)
+        }
+        timeZoneBadge={timeZoneSource === 'inferred' ? 'Inferred' : ''}
+        onRequestTimeZoneChange={() => setForceTimeZonePicker(true)}
         dateMin={dateMin}
         startTimeMin={startTimeMin}
         endTimeMin={endTimeMin}

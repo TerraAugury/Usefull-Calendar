@@ -1,15 +1,15 @@
 import { buildUtcFields, getTodayYYYYMMDD, zonedDateTimeToUtcMs } from '../utils/dates'
 
 describe('date utilities', () => {
-  it('computes local UTC milliseconds from local date and time', () => {
+  it('computes UTC milliseconds for Europe/London date and time', () => {
     const { startUtcMs } = buildUtcFields({
       date: '2026-01-10',
       startTime: '10:30',
       endTime: '',
-      timeMode: 'local',
+      timeMode: 'timezone',
+      timeZone: 'Europe/London',
     })
-    const expected = new Date(2026, 0, 10, 10, 30, 0, 0).getTime()
-    expect(startUtcMs).toBe(expected)
+    expect(startUtcMs).toBe(Date.UTC(2026, 0, 10, 10, 30, 0, 0))
   })
 
   it('converts Europe/London in winter (GMT) to UTC', () => {
@@ -28,11 +28,6 @@ describe('date utilities', () => {
       timeZone: 'Europe/Paris',
     })
     expect(utcMs).toBe(Date.UTC(2026, 6, 15, 10, 0, 0, 0))
-  })
-
-  it('returns today for local mode', () => {
-    const now = new Date(2026, 0, 10, 9, 30, 0, 0)
-    expect(getTodayYYYYMMDD({ mode: 'local', now })).toBe('2026-01-10')
   })
 
   it('returns today for timezone mode', () => {

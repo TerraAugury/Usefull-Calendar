@@ -8,8 +8,8 @@ import SettingsScreen from './screens/SettingsScreen'
 import { AppStateProvider } from './state/AppState'
 import { useAppState } from './state/hooks'
 
-function AppShell() {
-  const { ui, preferences } = useAppState()
+export function AppShell() {
+  const { ui, preferences, isHydrated } = useAppState()
 
   useEffect(() => {
     const root = document.documentElement
@@ -22,7 +22,7 @@ function AppShell() {
 
   return (
     <div className="app">
-      <main className="app-main">
+      <main className="app-main" data-hydrated={isHydrated ? 'true' : 'false'}>
         {ui.tab === 'calendar' ? <CalendarScreen /> : null}
         {ui.tab === 'add' ? <AddScreen /> : null}
         {ui.tab === 'categories' ? <CategoriesScreen /> : null}

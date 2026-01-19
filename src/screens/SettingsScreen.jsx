@@ -71,16 +71,20 @@ export default function SettingsScreen() {
     )
   }, [appointments.length, categories])
 
-  const handleExport = () => {
-    const data = buildExport({ categories, appointments, preferences })
-    const blob = new Blob([data], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'appointment-notebook.json'
-    link.click()
-    URL.revokeObjectURL(url)
-    dispatch({ type: 'SET_TOAST', message: 'Export ready.' })
+  const handleExport = async () => {
+    try {
+      const data = await buildExport()
+      const blob = new Blob([data], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'appointment-notebook.json'
+      link.click()
+      URL.revokeObjectURL(url)
+      dispatch({ type: 'SET_TOAST', message: 'Export ready.' })
+    } catch {
+      dispatch({ type: 'SET_TOAST', message: 'Export failed.' })
+    }
   }
 
   const handleImportCheck = () => {
@@ -226,19 +230,8 @@ export default function SettingsScreen() {
         <label className="form-label" htmlFor="time-mode">
           Time handling
         </label>
-        <select
-          id="time-mode"
-          value={preferences.timeMode ?? 'local'}
-          onChange={(event) =>
-            dispatch({
-              type: 'SET_PREFERENCES',
-              values: { timeMode: event.target.value },
-            })
-          }
-        >
-          <option value="local">Local time</option>
-          <option value="timezone">Timezone</option>
-        </select>
+        <input id="time-mode" value="Timezone" readOnly />
+        <p className="helper-text">Timezone-based scheduling is always enabled.</p>
       </div>
 
       <div className="form-field">
@@ -344,7 +337,9 @@ export default function SettingsScreen() {
         onConfirm={() => {
           if (!canLoadSample) return
           const sampleCategories = getDefaultCategories()
-          const sampleAppointments = getSampleAppointments(sampleCategories, new Date())
+          const sampleAppointments = getSampleAppointments(sampleCategories, new Date(), {
+            timeMode: preferences.timeMode,
+          })
           dispatch({
             type: 'LOAD_SAMPLE_DATA',
             values: { categories: sampleCategories, appointments: sampleAppointments },

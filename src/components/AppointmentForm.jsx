@@ -7,7 +7,10 @@ export default function AppointmentForm({
   submitLabel,
   submitDisabled = false,
   showTimeZone = false,
+  showTimeZonePicker = false,
   timeZones = [],
+  timeZoneBadge = '',
+  onRequestTimeZoneChange = () => {},
   dateMin = '',
   startTimeMin = '',
   endTimeMin = '',
@@ -119,25 +122,57 @@ export default function AppointmentForm({
 
       {showTimeZone ? (
         <div className="form-field">
-          <label className="form-label" htmlFor="timeZone">
-            Timezone
-          </label>
-          <select
-            id="timeZone"
-            value={values.timeZone}
-            onChange={(event) => onChange({ timeZone: event.target.value })}
-          >
-            <option value="">Select timezone</option>
-            {timeZones.map((zone) => (
-              <option key={zone.value} value={zone.value}>
-                {zone.label}
-              </option>
-            ))}
-          </select>
-          {errors.timeZone ? (
-            <span className="form-error">{errors.timeZone}</span>
-          ) : null}
-          <p className="helper-text">Time is stored in the selected timezone.</p>
+          {showTimeZonePicker ? (
+            <label className="form-label" htmlFor="timeZone">
+              Timezone
+            </label>
+          ) : (
+            <span className="form-label">Timezone</span>
+          )}
+          {showTimeZonePicker ? (
+            <>
+              <select
+                id="timeZone"
+                value={values.timeZone}
+                onChange={(event) =>
+                  onChange({
+                    timeZone: event.target.value,
+                    timeZoneSource: event.target.value ? 'manual' : '',
+                  })
+                }
+              >
+                <option value="">Select timezone</option>
+                {timeZones.map((zone) => (
+                  <option key={zone.value} value={zone.value}>
+                    {zone.label}
+                  </option>
+                ))}
+              </select>
+              {errors.timeZone ? (
+                <span className="form-error">{errors.timeZone}</span>
+              ) : null}
+              <p className="helper-text">Time is stored in the selected timezone.</p>
+            </>
+          ) : (
+            <>
+              <div className="timezone-row">
+                <div className="timezone-value">
+                  <span>{values.timeZone}</span>
+                  {timeZoneBadge ? (
+                    <span className="timezone-badge">{timeZoneBadge}</span>
+                  ) : null}
+                </div>
+                <button
+                  className="btn btn-secondary"
+                  type="button"
+                  onClick={onRequestTimeZoneChange}
+                >
+                  Change
+                </button>
+              </div>
+              <p className="helper-text">Time is stored in the selected timezone.</p>
+            </>
+          )}
         </div>
       ) : null}
 

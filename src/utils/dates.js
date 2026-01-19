@@ -37,7 +37,7 @@ export function formatDateYYYYMMDD(date) {
   return formatDateKey(date.getFullYear(), date.getMonth() + 1, date.getDate())
 }
 
-export function getTodayYYYYMMDD({ mode = 'local', timeZone, now = new Date() } = {}) {
+export function getTodayYYYYMMDD({ mode = 'timezone', timeZone, now = new Date() } = {}) {
   if (!(now instanceof Date) || Number.isNaN(now.getTime())) return ''
   if (mode === 'timezone' && timeZone) {
     const formatter = getDateFormatter(timeZone)
@@ -54,7 +54,7 @@ export function getTodayYYYYMMDD({ mode = 'local', timeZone, now = new Date() } 
 }
 
 export function getNowTimeHHMM({
-  mode = 'local',
+  mode = 'timezone',
   timeZone,
   now = new Date(),
   stepMinutes = 1,

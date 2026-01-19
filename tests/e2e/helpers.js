@@ -5,12 +5,12 @@ export const FIXED_NOW_ISO = '2026-01-10T10:00:00.000Z'
 export function buildSeedData({
   nowIso = FIXED_NOW_ISO,
   theme = 'light',
-  timeMode = 'local',
+  timeMode = 'timezone',
   showPast = false,
 } = {}) {
   const now = new Date(nowIso)
   const categories = getDefaultCategories()
-  const appointments = getSampleAppointments(categories, now)
+  const appointments = getSampleAppointments(categories, now, { timeMode })
   const preferences = { theme, showPast, timeMode }
   return { categories, appointments, preferences }
 }
@@ -39,34 +39,97 @@ export async function freezeTime(page, nowIso = FIXED_NOW_ISO) {
 }
 
 export async function seedStorage(page, data) {
-  await page.addInitScript(({ payload }) => {
-    localStorage.setItem('app_categories', payload.categories)
-    localStorage.setItem('app_appointments', payload.appointments)
-    localStorage.setItem('app_preferences', payload.preferences)
+  await page.evaluate(async (payload) => {
+    const openDb = () =>
+      new Promise((resolve, reject) => {
+        const request = indexedDB.open('CalendarDB', 1)
+        request.onupgradeneeded = () => {
+          const db = request.result
+          if (!db.objectStoreNames.contains('appointments')) {
+            const store = db.createObjectStore('appointments', { keyPath: 'id' })
+            store.createIndex('startUtcMs', 'startUtcMs', { unique: false })
+            store.createIndex('date', 'date', { unique: false })
+            store.createIndex('categoryId', 'categoryId', { unique: false })
+          }
+          if (!db.objectStoreNames.contains('categories')) {
+            db.createObjectStore('categories', { keyPath: 'id' })
+          }
+          if (!db.objectStoreNames.contains('preferences')) {
+            db.createObjectStore('preferences', { keyPath: 'key' })
+          }
+          if (!db.objectStoreNames.contains('pax')) {
+            db.createObjectStore('pax', { keyPath: 'key' })
+          }
+        }
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error)
+      })
+
+    const db = await openDb()
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(
+        ['appointments', 'categories', 'preferences', 'pax'],
+        'readwrite',
+      )
+      const appointmentsStore = tx.objectStore('appointments')
+      const categoriesStore = tx.objectStore('categories')
+      const preferencesStore = tx.objectStore('preferences')
+      const paxStore = tx.objectStore('pax')
+
+      appointmentsStore.clear()
+      categoriesStore.clear()
+      preferencesStore.clear()
+      paxStore.clear()
+
+      payload.categories.forEach((category) => categoriesStore.put(category))
+      payload.appointments.forEach((appointment) =>
+        appointmentsStore.put(appointment),
+      )
+      Object.entries(payload.preferences).forEach(([key, value]) => {
+        preferencesStore.put({ key, value })
+      })
+      Object.entries(payload.pax).forEach(([key, value]) => {
+        paxStore.put({ key, value })
+      })
+
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+      tx.onabort = () => reject(tx.error || new Error('Transaction aborted'))
+    })
+    db.close()
   }, {
-    payload: {
-      categories: JSON.stringify(data.categories),
-      appointments: JSON.stringify(data.appointments),
-      preferences: JSON.stringify(data.preferences),
-    },
+    categories: data.categories ?? [],
+    appointments: data.appointments ?? [],
+    preferences: data.preferences ?? {},
+    pax: data.pax ?? { selectedPaxName: null, paxNames: [], paxLocations: {} },
   })
 }
 
 export async function clearStorage(page) {
-  await page.addInitScript(() => {
-    localStorage.clear()
-  })
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const request = indexedDB.deleteDatabase('CalendarDB')
+        request.onsuccess = () => resolve()
+        request.onerror = () => resolve()
+        request.onblocked = () => resolve()
+      }),
+  )
 }
 
 export async function initApp(page, { nowIso = FIXED_NOW_ISO, seedData } = {}) {
   await freezeTime(page, nowIso)
-  if (seedData) {
-    await seedStorage(page, seedData)
-  } else {
-    await clearStorage(page)
-  }
   await page.goto('/')
   await page.waitForSelector('.app')
+  if (seedData) {
+    await seedStorage(page, seedData)
+    await page.reload()
+    await page.waitForSelector('.app')
+  } else {
+    await clearStorage(page)
+    await page.reload()
+    await page.waitForSelector('.app')
+  }
 }
 
 export async function disableAnimations(page) {

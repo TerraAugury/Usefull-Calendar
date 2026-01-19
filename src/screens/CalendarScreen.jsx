@@ -55,7 +55,7 @@ export default function CalendarScreen() {
       ? areFiltersActive(ui.filters)
       : ui.filters.categoryId !== 'all'
   const showPast = preferences.showPast
-  const timeMode = preferences.timeMode ?? 'local'
+  const timeMode = preferences.timeMode ?? 'timezone'
   const paxState = pax ?? DEFAULT_PAX_STATE
   const paxNames = paxState.paxNames ?? []
   const selectedPaxName = paxState.selectedPaxName
@@ -541,6 +541,7 @@ export default function CalendarScreen() {
         appointment={editingAppointment}
         categories={categories}
         preferences={preferences}
+        pax={paxState}
         onSave={(values) => {
           if (!editingAppointment) return
           dispatch({

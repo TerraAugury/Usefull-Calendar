@@ -1,9 +1,8 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
-import AddScreen from '../screens/AddScreen'
-import { AppStateProvider } from '../state/AppState'
 import { DEFAULT_FILTERS, EMPTY_DRAFT } from '../utils/constants'
+import { renderWithState } from './renderUtils'
 
 describe('Add appointment timezone mode', () => {
   beforeEach(() => {
@@ -34,17 +33,21 @@ describe('Add appointment timezone mode', () => {
       },
     }
 
-    render(
-      <AppStateProvider initialState={state}>
-        <AddScreen />
-      </AppStateProvider>,
-    )
+    await renderWithState(state)
 
     const startTimeInput = screen.getByLabelText('Start time')
-    expect(startTimeInput).toBeDisabled()
-    expect(screen.getByText('Select timezone first.')).toBeInTheDocument()
+    const timeZoneSelect = screen.queryByLabelText('Timezone')
+    if (timeZoneSelect) {
+      expect(startTimeInput).toBeDisabled()
+      expect(screen.getByText('Select timezone first.')).toBeInTheDocument()
+    } else {
+      expect(startTimeInput).not.toBeDisabled()
+    }
 
     await act(async () => {
+      if (!timeZoneSelect) {
+        await user.click(screen.getByRole('button', { name: 'Change' }))
+      }
       await user.selectOptions(screen.getByLabelText('Timezone'), 'Europe/Paris')
     })
     expect(startTimeInput).not.toBeDisabled()

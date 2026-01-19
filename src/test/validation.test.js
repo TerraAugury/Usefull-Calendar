@@ -25,10 +25,10 @@ describe('validation', () => {
 
   it('requires appointment fields', () => {
     const errors = validateAppointmentInput(
-      { title: '', date: '', startTime: '', categoryId: '' },
+      { title: '', date: '', startTime: '', categoryId: '', timeZone: 'Europe/London' },
       [],
       new Date(),
-      'local',
+      'timezone',
     )
     expect(errors.title).toBeDefined()
     expect(errors.date).toBeDefined()
@@ -45,18 +45,18 @@ describe('validation', () => {
         startTime: '10:30',
         endTime: '09:30',
         categoryId: 'cat-1',
-        timeZone: '',
+        timeZone: 'Europe/London',
       },
       categories,
       new Date(),
-      'local',
+      'timezone',
     )
     expect(errors.endTime).toBeDefined()
   })
 
   it('rejects appointments in the past', () => {
     const categories = [{ id: 'cat-1', name: 'Work', color: 'blue', icon: '\u{1F4BC}' }]
-    const now = new Date(2026, 0, 10, 10, 0)
+    const now = new Date(Date.UTC(2026, 0, 10, 10, 0))
     const errors = validateAppointmentInput(
       {
         title: 'Checkup',
@@ -64,11 +64,11 @@ describe('validation', () => {
         startTime: '09:00',
         endTime: '',
         categoryId: 'cat-1',
-        timeZone: '',
+        timeZone: 'Europe/London',
       },
       categories,
       now,
-      'local',
+      'timezone',
     )
     expect(errors.startTime).toBeDefined()
   })

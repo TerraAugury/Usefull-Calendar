@@ -1,10 +1,9 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
-import CalendarScreen from '../screens/CalendarScreen'
-import { AppStateProvider } from '../state/AppState'
-import { DEFAULT_FILTERS, EMPTY_DRAFT } from '../utils/constants'
+import { DEFAULT_FILTERS, DEFAULT_TIME_ZONE, EMPTY_DRAFT } from '../utils/constants'
 import { buildUtcFields } from '../utils/dates'
+import { renderWithState } from './renderUtils'
 
 describe('Calendar details dialog', () => {
   beforeEach(() => {
@@ -21,11 +20,13 @@ describe('Calendar details dialog', () => {
     const categories = [
       { id: 'cat-1', name: 'General', color: 'blue', icon: '\u{1F5D3}\uFE0F' },
     ]
+    const timeZone = DEFAULT_TIME_ZONE
     const { startUtcMs } = buildUtcFields({
       date: '2026-01-10',
       startTime: '11:00',
       endTime: '',
-      timeMode: 'local',
+      timeMode: 'timezone',
+      timeZone,
     })
     const appointments = [
       {
@@ -40,7 +41,9 @@ describe('Calendar details dialog', () => {
         status: 'planned',
         createdAt: '2026-01-01T08:00:00.000Z',
         updatedAt: '2026-01-01T08:00:00.000Z',
-        timeMode: 'local',
+        timeMode: 'timezone',
+        timeZone,
+        timeZoneSource: 'manual',
         startUtcMs,
       },
     ]
@@ -48,7 +51,7 @@ describe('Calendar details dialog', () => {
     const state = {
       categories,
       appointments,
-      preferences: { theme: 'system', showPast: false, timeMode: 'local' },
+      preferences: { theme: 'system', showPast: false, timeMode: 'timezone' },
       ui: {
         tab: 'calendar',
         filters: { ...DEFAULT_FILTERS },
@@ -58,11 +61,7 @@ describe('Calendar details dialog', () => {
       },
     }
 
-    render(
-      <AppStateProvider initialState={state}>
-        <CalendarScreen />
-      </AppStateProvider>,
-    )
+    await renderWithState(state)
 
     await act(async () => {
       await user.click(screen.getByText('Team sync').closest('button'))

@@ -1,9 +1,8 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import SettingsScreen from '../screens/SettingsScreen'
-import { AppStateProvider } from '../state/AppState'
 import { getDefaultCategories } from '../data/sampleData'
 import { DEFAULT_FILTERS, EMPTY_DRAFT } from '../utils/constants'
+import { renderWithState } from './renderUtils'
 
 describe('Settings sample data', () => {
   it('confirms and loads sample data', async () => {
@@ -13,7 +12,7 @@ describe('Settings sample data', () => {
     const state = {
       categories,
       appointments: [],
-      preferences: { theme: 'system', showPast: false, timeMode: 'local' },
+      preferences: { theme: 'system', showPast: false, timeMode: 'timezone' },
       ui: {
         tab: 'settings',
         filters: { ...DEFAULT_FILTERS },
@@ -23,11 +22,7 @@ describe('Settings sample data', () => {
       },
     }
 
-    render(
-      <AppStateProvider initialState={state}>
-        <SettingsScreen />
-      </AppStateProvider>,
-    )
+    await renderWithState(state)
 
     const openButton = screen.getByRole('button', { name: /load sample data/i })
     await act(async () => {

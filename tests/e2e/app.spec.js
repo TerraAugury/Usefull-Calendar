@@ -38,6 +38,10 @@ test('add flow: new appointment returns to calendar and appears upcoming', async
   await initApp(page, { seedData })
 
   await page.getByRole('button', { name: 'Add appointment' }).click()
+  const timeZoneSelect = page.locator('select#timeZone')
+  if ((await timeZoneSelect.count()) > 0) {
+    await timeZoneSelect.selectOption('Europe/London')
+  }
   await page.getByLabel('Title').fill('Vendor call')
   await page.getByLabel('Date').fill('2026-01-10')
   await page.getByLabel('Start time').fill('13:00')
@@ -54,6 +58,10 @@ test('no-past enforcement blocks saving', async ({ page }) => {
   await initApp(page)
 
   await page.getByRole('button', { name: 'Add appointment' }).click()
+  const timeZoneSelect = page.locator('select#timeZone')
+  if ((await timeZoneSelect.count()) > 0) {
+    await timeZoneSelect.selectOption('Europe/London')
+  }
   await page.getByLabel('Title').fill('Past check')
   await page.getByLabel('Date').fill('2026-01-09')
   await page.getByLabel('Start time').fill('09:00')
@@ -67,6 +75,10 @@ test('date and time inputs enforce min values', async ({ page }) => {
   await initApp(page)
 
   await page.getByRole('button', { name: 'Add appointment' }).click()
+  const timeZoneSelect = page.locator('select#timeZone')
+  if ((await timeZoneSelect.count()) > 0) {
+    await timeZoneSelect.selectOption('Europe/London')
+  }
   const dateInput = page.getByLabel('Date')
   await expect(dateInput).toHaveAttribute('min', '2026-01-10')
 
@@ -88,15 +100,16 @@ test('calendar grid opens day sheet with appointments', async ({ page }) => {
 })
 
 test('timezone mode: create appointment with Europe/Paris', async ({ page }) => {
-  const seedData = buildSeedData()
+  const seedData = buildSeedData({ timeMode: 'timezone' })
   await initApp(page, { seedData })
-
-  await page.getByRole('button', { name: 'Settings' }).click()
-  await page.getByLabel('Time handling').selectOption('timezone')
 
   await page.getByRole('button', { name: 'Add appointment' }).click()
   await page.getByLabel('Title').fill('Paris briefing')
   await page.getByLabel('Date').fill('2026-01-10')
+  const timeZoneSelect = page.locator('select#timeZone')
+  if ((await timeZoneSelect.count()) === 0) {
+    await page.getByRole('button', { name: 'Change' }).click()
+  }
   await page.getByLabel('Timezone').selectOption('Europe/Paris')
   await page.getByLabel('Start time').fill('12:00')
 
@@ -106,4 +119,44 @@ test('timezone mode: create appointment with Europe/Paris', async ({ page }) => 
   const firstCard = page.locator('.appointment-card').first()
   await expect(firstCard).toContainText('Paris briefing')
   await expect(firstCard).toContainText('Europe/Paris')
+})
+
+test('timezone mode: inferred timezone from pax country', async ({ page }) => {
+  const seedData = buildSeedData({ timeMode: 'timezone' })
+  seedData.pax = {
+    selectedPaxName: 'Alex Smith',
+    paxNames: ['Alex Smith'],
+    paxLocations: {
+      'Alex Smith': {
+        flights: [
+          {
+            id: 'flight-1',
+            paxName: 'Alex Smith',
+            flightDate: '2026-01-10',
+            pnr: null,
+            airline: 'British Airways',
+            flightNumber: 'BA0664',
+            fromIata: 'LHR',
+            toIata: 'LCA',
+            depScheduled: '2026-01-10T08:00:00+00:00',
+            arrScheduled: '2026-01-10T14:00:00+02:00',
+          },
+        ],
+      },
+    },
+  }
+
+  await initApp(page, { seedData })
+
+  await page.getByRole('button', { name: 'Add appointment' }).click()
+  await page.getByLabel('Title').fill('Pax inferred')
+  await page.getByLabel('Date').fill('2026-01-10')
+  await page.getByLabel('Start time').fill('15:00')
+
+  await page.getByRole('button', { name: /save appointment/i }).click()
+  await expect(page.getByRole('heading', { name: 'Calendar' })).toBeVisible()
+
+  const firstCard = page.locator('.appointment-card').first()
+  await expect(firstCard).toContainText('Pax inferred')
+  await expect(firstCard).toContainText('Europe/London')
 })

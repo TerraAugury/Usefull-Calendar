@@ -13,7 +13,7 @@ export const CATEGORY_COLORS = [
 
 export const STATUS_OPTIONS = ['planned', 'done', 'cancelled']
 
-export const TIME_MODES = ['local', 'timezone']
+export const TIME_MODES = ['timezone']
 export const CALENDAR_VIEW_MODES = ['agenda', 'calendar']
 export const CALENDAR_GRID_MODES = ['week', 'month']
 
@@ -30,12 +30,21 @@ export const TIMEZONE_OPTIONS = [
   { value: 'Europe/Brussels', label: 'Europe/Brussels' },
   { value: 'Europe/Vienna', label: 'Europe/Vienna' },
   { value: 'Europe/Prague', label: 'Europe/Prague' },
+  { value: 'Europe/Bratislava', label: 'Europe/Bratislava' },
   { value: 'Europe/Warsaw', label: 'Europe/Warsaw' },
   { value: 'Europe/Stockholm', label: 'Europe/Stockholm' },
   { value: 'Europe/Oslo', label: 'Europe/Oslo' },
   { value: 'Europe/Copenhagen', label: 'Europe/Copenhagen' },
   { value: 'Europe/Helsinki', label: 'Europe/Helsinki' },
   { value: 'Europe/Athens', label: 'Europe/Athens' },
+  { value: 'Europe/Zagreb', label: 'Europe/Zagreb' },
+  { value: 'Europe/Ljubljana', label: 'Europe/Ljubljana' },
+  { value: 'Europe/Tallinn', label: 'Europe/Tallinn' },
+  { value: 'Europe/Riga', label: 'Europe/Riga' },
+  { value: 'Europe/Vilnius', label: 'Europe/Vilnius' },
+  { value: 'Europe/Luxembourg', label: 'Europe/Luxembourg' },
+  { value: 'Europe/Malta', label: 'Europe/Malta' },
+  { value: 'Atlantic/Reykjavik', label: 'Atlantic/Reykjavik' },
   { value: 'Asia/Nicosia', label: 'Cyprus (Nicosia) - Asia/Nicosia' },
   { value: 'Europe/Bucharest', label: 'Europe/Bucharest' },
   { value: 'Europe/Sofia', label: 'Europe/Sofia' },
@@ -45,6 +54,7 @@ export const TIMEZONE_OPTIONS = [
 ]
 
 export const DEFAULT_TIME_ZONE = 'Europe/London'
+export const TIMEZONE_SOURCES = ['inferred', 'manual', 'deviceFallback']
 
 export const DEFAULT_FILTERS = {
   search: '',
@@ -62,4 +72,5 @@ export const EMPTY_DRAFT = {
   location: '',
   notes: '',
   timeZone: '',
+  timeZoneSource: '',
 }

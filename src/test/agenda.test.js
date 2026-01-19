@@ -16,6 +16,7 @@ describe('agenda logic', () => {
       updatedAt: '2026-01-01T08:00:00.000Z',
       timeMode: 'timezone',
       timeZone: 'Europe/London',
+      timeZoneSource: 'manual',
       startUtcMs: Date.UTC(2026, 0, 10, 9, 0),
     },
     {
@@ -32,6 +33,7 @@ describe('agenda logic', () => {
       updatedAt: '2026-01-02T08:00:00.000Z',
       timeMode: 'timezone',
       timeZone: 'Europe/London',
+      timeZoneSource: 'manual',
       startUtcMs: Date.UTC(2026, 0, 11, 11, 0),
     },
     {
@@ -48,6 +50,7 @@ describe('agenda logic', () => {
       updatedAt: '2026-01-03T08:00:00.000Z',
       timeMode: 'timezone',
       timeZone: 'Europe/London',
+      timeZoneSource: 'manual',
       startUtcMs: Date.UTC(2026, 0, 10, 12, 0),
     },
     {
@@ -64,6 +67,7 @@ describe('agenda logic', () => {
       updatedAt: '2026-01-04T08:00:00.000Z',
       timeMode: 'timezone',
       timeZone: 'Europe/London',
+      timeZoneSource: 'manual',
       startUtcMs: Date.UTC(2026, 0, 12, 8, 0),
     },
   ]

@@ -1,10 +1,9 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
-import CalendarScreen from '../screens/CalendarScreen'
-import { AppStateProvider } from '../state/AppState'
-import { DEFAULT_FILTERS, EMPTY_DRAFT } from '../utils/constants'
+import { DEFAULT_FILTERS, DEFAULT_TIME_ZONE, EMPTY_DRAFT } from '../utils/constants'
 import { buildUtcFields } from '../utils/dates'
+import { renderWithState } from './renderUtils'
 
 describe('Calendar past toggle', () => {
   beforeEach(() => {
@@ -21,17 +20,20 @@ describe('Calendar past toggle', () => {
     const categories = [
       { id: 'cat-1', name: 'General', color: 'blue', icon: '\u{1F5D3}\uFE0F' },
     ]
+    const timeZone = DEFAULT_TIME_ZONE
     const pastTime = buildUtcFields({
       date: '2026-01-09',
       startTime: '09:00',
       endTime: '',
-      timeMode: 'local',
+      timeMode: 'timezone',
+      timeZone,
     }).startUtcMs
     const futureTime = buildUtcFields({
       date: '2026-01-10',
       startTime: '11:00',
       endTime: '',
-      timeMode: 'local',
+      timeMode: 'timezone',
+      timeZone,
     }).startUtcMs
     const appointments = [
       {
@@ -46,7 +48,9 @@ describe('Calendar past toggle', () => {
         status: 'done',
         createdAt: '2026-01-01T08:00:00.000Z',
         updatedAt: '2026-01-01T08:00:00.000Z',
-        timeMode: 'local',
+        timeMode: 'timezone',
+        timeZone,
+        timeZoneSource: 'manual',
         startUtcMs: pastTime,
       },
       {
@@ -61,7 +65,9 @@ describe('Calendar past toggle', () => {
         status: 'planned',
         createdAt: '2026-01-01T08:00:00.000Z',
         updatedAt: '2026-01-01T08:00:00.000Z',
-        timeMode: 'local',
+        timeMode: 'timezone',
+        timeZone,
+        timeZoneSource: 'manual',
         startUtcMs: futureTime,
       },
     ]
@@ -69,7 +75,7 @@ describe('Calendar past toggle', () => {
     const state = {
       categories,
       appointments,
-      preferences: { theme: 'system', showPast: false, timeMode: 'local' },
+      preferences: { theme: 'system', showPast: false, timeMode: 'timezone' },
       ui: {
         tab: 'calendar',
         filters: { ...DEFAULT_FILTERS },
@@ -79,11 +85,7 @@ describe('Calendar past toggle', () => {
       },
     }
 
-    render(
-      <AppStateProvider initialState={state}>
-        <CalendarScreen />
-      </AppStateProvider>,
-    )
+    await renderWithState(state)
 
     await act(async () => {
       await user.click(screen.getByLabelText(/open filters/i))

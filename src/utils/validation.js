@@ -1,6 +1,7 @@
 import {
   CATEGORY_COLORS,
   STATUS_OPTIONS,
+  TIMEZONE_SOURCES,
   TIMEZONE_OPTIONS,
   TIME_MODES,
 } from './constants'
@@ -34,7 +35,11 @@ export function isValidTimeZone(value) {
   return TIMEZONE_OPTIONS.some((zone) => zone.value === value)
 }
 
-export function isAppointmentStartInPast(values, now = new Date(), timeMode = 'local') {
+export function isValidTimeZoneSource(value) {
+  return TIMEZONE_SOURCES.includes(value)
+}
+
+export function isAppointmentStartInPast(values, now = new Date(), timeMode = 'timezone') {
   const { startUtcMs } = buildUtcFields({
     date: values.date,
     startTime: values.startTime,
@@ -73,7 +78,7 @@ export function validateAppointmentInput(
   values,
   categories = [],
   now = new Date(),
-  timeMode = 'local',
+  timeMode = 'timezone',
 ) {
   const errors = {}
   if (!values.title?.trim()) {
@@ -152,6 +157,12 @@ export function isValidAppointmentShape(item, categoryIds = null) {
   if (!Number.isFinite(item.startUtcMs)) return false
   if (item.timeMode === 'timezone') {
     if (typeof item.timeZone !== 'string' || !isValidTimeZone(item.timeZone)) {
+      return false
+    }
+    if (
+      typeof item.timeZoneSource !== 'string' ||
+      !isValidTimeZoneSource(item.timeZoneSource)
+    ) {
       return false
     }
   }

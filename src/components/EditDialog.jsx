@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { TIMEZONE_OPTIONS } from '../utils/constants'
 import {
@@ -13,6 +13,8 @@ import {
 } from '../utils/validation'
 import AppointmentForm from './AppointmentForm'
 import { IconClose } from './Icons'
+import { DEFAULT_PAX_STATE } from '../utils/pax'
+import { resolveTimeZoneState } from '../utils/timezone'
 
 export default function EditDialog({
   open,
@@ -20,6 +22,7 @@ export default function EditDialog({
   appointment,
   categories,
   preferences,
+  pax,
   onSave,
   onCancel,
 }) {
@@ -33,11 +36,27 @@ export default function EditDialog({
         location: appointment.location ?? '',
         notes: appointment.notes ?? '',
         timeZone: appointment.timeZone ?? '',
+        timeZoneSource:
+          appointment.timeZoneSource ??
+          (appointment.timeMode === 'timezone' && appointment.timeZone ? 'manual' : ''),
       }
     : null
   const [values, setValues] = useState(() => initialValues)
   const [errors, setErrors] = useState({})
+  const [forceTimeZonePicker, setForceTimeZonePicker] = useState(false)
   const formId = 'edit-appointment-form'
+  const safeValues =
+    values ?? {
+      title: '',
+      date: '',
+      startTime: '',
+      endTime: '',
+      categoryId: '',
+      location: '',
+      notes: '',
+      timeZone: '',
+      timeZoneSource: '',
+    }
 
   const handleChange = (patch) => {
     setValues((prev) => {
@@ -56,22 +75,54 @@ export default function EditDialog({
     })
   }
 
-  if (!appointment || !values) return null
   const now = new Date()
-  const timeMode = appointment.timeMode ?? preferences?.timeMode ?? 'local'
-  const timeZone = values.timeZone
+  const timeMode = appointment?.timeMode ?? preferences?.timeMode ?? 'timezone'
+  const paxState = pax ?? DEFAULT_PAX_STATE
+  const selectedPaxName = paxState.selectedPaxName
+  const paxFlights = useMemo(() => {
+    if (!selectedPaxName) return []
+    return paxState.paxLocations?.[selectedPaxName]?.flights ?? []
+  }, [paxState.paxLocations, selectedPaxName])
+  const resolvedTimeZone = useMemo(
+    () =>
+      resolveTimeZoneState({
+        timeMode,
+        dateStr: safeValues.date,
+        paxFlights,
+        currentTimeZone: safeValues.timeZone,
+        currentSource: safeValues.timeZoneSource,
+      }),
+    [
+      timeMode,
+      safeValues.date,
+      safeValues.timeZone,
+      safeValues.timeZoneSource,
+      paxFlights,
+    ],
+  )
+  const timeZone =
+    timeMode === 'timezone' ? resolvedTimeZone.timeZone : ''
+  const timeZoneSource =
+    timeMode === 'timezone' ? resolvedTimeZone.source : ''
   const today = getTodayYYYYMMDD({ mode: timeMode, timeZone, now })
   const dateMin = today
-  const isToday = today && values.date === today
+  const isToday = today && safeValues.date === today
   const timeDisabled = timeMode === 'timezone' && !timeZone
   const startTimeMin =
     !timeDisabled && isToday
       ? getNowTimeHHMM({ mode: timeMode, timeZone, now, stepMinutes: 1 })
       : ''
-  const endTimeMin = values.startTime || ''
-  const dateBeforeMin = values.date && dateMin && values.date < dateMin
-  const startInPast = isAppointmentStartInPast(values, now, timeMode)
-  const submitBlocked = startInPast || dateBeforeMin
+  const endTimeMin = safeValues.startTime || ''
+  const dateBeforeMin =
+    safeValues.date && dateMin && safeValues.date < dateMin
+  const draftForValidation = {
+    ...safeValues,
+    timeZone,
+    timeZoneSource,
+  }
+  const startInPast = isAppointmentStartInPast(draftForValidation, now, timeMode)
+  const missingTimeZone = timeMode === 'timezone' && !timeZone
+  const submitBlocked = startInPast || dateBeforeMin || missingTimeZone
   const visibleErrors = { ...errors }
   if (startInPast && !visibleErrors.startTime) {
     visibleErrors.startTime = 'Appointments cannot be in the past.'
@@ -80,32 +131,76 @@ export default function EditDialog({
     ? 'Past appointments cannot be saved. Choose a future date/time.'
     : ''
 
+  useEffect(() => {
+    if (timeMode !== 'timezone') {
+      if (safeValues.timeZone || safeValues.timeZoneSource) {
+        setValues((prev) => ({ ...prev, timeZone: '', timeZoneSource: '' }))
+      }
+      if (forceTimeZonePicker) {
+        setForceTimeZonePicker(false)
+      }
+      return
+    }
+    if (
+      resolvedTimeZone.timeZone &&
+      (resolvedTimeZone.timeZone !== safeValues.timeZone ||
+        resolvedTimeZone.source !== safeValues.timeZoneSource)
+    ) {
+      setValues((prev) => ({
+        ...prev,
+        timeZone: resolvedTimeZone.timeZone,
+        timeZoneSource: resolvedTimeZone.source,
+      }))
+    }
+  }, [
+    forceTimeZonePicker,
+    resolvedTimeZone.source,
+    resolvedTimeZone.timeZone,
+    timeMode,
+    safeValues.timeZone,
+    safeValues.timeZoneSource,
+  ])
+
   const handleSubmit = () => {
-    const nextErrors = validateAppointmentInput(values, categories, now, timeMode)
+    const nextErrors = validateAppointmentInput(
+      draftForValidation,
+      categories,
+      now,
+      timeMode,
+    )
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors)
       return
     }
     const { startUtcMs, endUtcMs } = buildUtcFields({
-      date: values.date,
-      startTime: values.startTime,
-      endTime: values.endTime,
+      date: safeValues.date,
+      startTime: safeValues.startTime,
+      endTime: safeValues.endTime,
       timeMode,
-      timeZone: values.timeZone,
+      timeZone,
     })
     if (!Number.isFinite(startUtcMs)) {
       setErrors({ startTime: 'Appointments cannot be in the past.' })
       return
     }
-    const payload = { ...values, timeMode, startUtcMs }
-    if (values.endTime) {
+    const payload = {
+      ...safeValues,
+      timeMode,
+      timeZone,
+      timeZoneSource,
+      startUtcMs,
+    }
+    if (safeValues.endTime) {
       payload.endUtcMs = endUtcMs
     }
     if (timeMode !== 'timezone') {
       delete payload.timeZone
+      delete payload.timeZoneSource
     }
     onSave(payload)
   }
+
+  if (!appointment || !values) return null
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -125,10 +220,18 @@ export default function EditDialog({
           </Dialog.Description>
           <div className="dialog-body">
             <AppointmentForm
-              values={values}
+              values={draftForValidation}
               errors={visibleErrors}
               categories={categories}
-              onChange={handleChange}
+              onChange={(patch) => {
+                if (
+                  Object.prototype.hasOwnProperty.call(patch, 'timeZone') &&
+                  patch.timeZone
+                ) {
+                  setForceTimeZonePicker(false)
+                }
+                handleChange(patch)
+              }}
               onSubmit={handleSubmit}
               submitLabel="Save changes"
               showActions={false}
@@ -136,6 +239,11 @@ export default function EditDialog({
               submitDisabled={submitBlocked}
               showTimeZone={timeMode === 'timezone'}
               timeZones={TIMEZONE_OPTIONS}
+              showTimeZonePicker={
+                timeMode === 'timezone' && (forceTimeZonePicker || !timeZone)
+              }
+              timeZoneBadge={timeZoneSource === 'inferred' ? 'Inferred' : ''}
+              onRequestTimeZoneChange={() => setForceTimeZonePicker(true)}
               dateMin={dateMin}
               startTimeMin={startTimeMin}
               endTimeMin={endTimeMin}

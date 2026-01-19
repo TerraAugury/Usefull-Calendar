@@ -248,6 +248,7 @@ export function buildImportedFlight(record, paxName) {
     status: 'planned',
     timeMode: 'timezone',
     timeZone: depTimeZone,
+    timeZoneSource: 'inferred',
     startUtcMs: depParsed.utcMs,
     source: {
       type: 'flight',

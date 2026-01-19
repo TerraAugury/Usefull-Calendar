@@ -1,9 +1,9 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
-import AddScreen from '../screens/AddScreen'
-import { AppStateProvider } from '../state/AppState'
-import { DEFAULT_FILTERS, EMPTY_DRAFT } from '../utils/constants'
+import { DEFAULT_FILTERS, DEFAULT_TIME_ZONE, EMPTY_DRAFT } from '../utils/constants'
+import { getNowTimeHHMM, getTodayYYYYMMDD } from '../utils/dates'
+import { renderWithState } from './renderUtils'
 
 describe('Add appointment date/time mins', () => {
   beforeEach(() => {
@@ -17,14 +17,21 @@ describe('Add appointment date/time mins', () => {
 
   it('sets date min and time min for today', async () => {
     const user = userEvent.setup()
+    const timeZone = DEFAULT_TIME_ZONE
+    const now = new Date(2026, 0, 10, 10, 0, 0, 0)
     const categories = [
       { id: 'cat-1', name: 'General', color: 'blue', icon: '\u{1F5D3}\uFE0F' },
     ]
-    const addDraft = { ...EMPTY_DRAFT, categoryId: categories[0].id }
+    const addDraft = {
+      ...EMPTY_DRAFT,
+      categoryId: categories[0].id,
+      timeZone,
+      timeZoneSource: 'manual',
+    }
     const state = {
       categories,
       appointments: [],
-      preferences: { theme: 'system', showPast: false, timeMode: 'local' },
+      preferences: { theme: 'system', showPast: false, timeMode: 'timezone' },
       ui: {
         tab: 'add',
         filters: { ...DEFAULT_FILTERS },
@@ -34,20 +41,23 @@ describe('Add appointment date/time mins', () => {
       },
     }
 
-    render(
-      <AppStateProvider initialState={state}>
-        <AddScreen />
-      </AppStateProvider>,
-    )
+    await renderWithState(state)
 
     const dateInput = screen.getByLabelText('Date')
-    expect(dateInput).toHaveAttribute('min', '2026-01-10')
+    const expectedDate = getTodayYYYYMMDD({ mode: 'timezone', timeZone, now })
+    expect(dateInput).toHaveAttribute('min', expectedDate)
 
     await act(async () => {
-      await user.type(dateInput, '2026-01-10')
+      await user.type(dateInput, expectedDate)
     })
 
     const timeInput = screen.getByLabelText('Start time')
-    expect(timeInput).toHaveAttribute('min', '10:00')
+    const expectedTime = getNowTimeHHMM({
+      mode: 'timezone',
+      timeZone,
+      now,
+      stepMinutes: 1,
+    })
+    expect(timeInput).toHaveAttribute('min', expectedTime)
   })
 })
