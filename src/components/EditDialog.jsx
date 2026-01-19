@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { TIMEZONE_OPTIONS } from '../utils/constants'
 import {
@@ -130,36 +130,6 @@ export default function EditDialog({
   const dateWarning = dateBeforeMin
     ? 'Past appointments cannot be saved. Choose a future date/time.'
     : ''
-
-  useEffect(() => {
-    if (timeMode !== 'timezone') {
-      if (safeValues.timeZone || safeValues.timeZoneSource) {
-        setValues((prev) => ({ ...prev, timeZone: '', timeZoneSource: '' }))
-      }
-      if (forceTimeZonePicker) {
-        setForceTimeZonePicker(false)
-      }
-      return
-    }
-    if (
-      resolvedTimeZone.timeZone &&
-      (resolvedTimeZone.timeZone !== safeValues.timeZone ||
-        resolvedTimeZone.source !== safeValues.timeZoneSource)
-    ) {
-      setValues((prev) => ({
-        ...prev,
-        timeZone: resolvedTimeZone.timeZone,
-        timeZoneSource: resolvedTimeZone.source,
-      }))
-    }
-  }, [
-    forceTimeZonePicker,
-    resolvedTimeZone.source,
-    resolvedTimeZone.timeZone,
-    timeMode,
-    safeValues.timeZone,
-    safeValues.timeZoneSource,
-  ])
 
   const handleSubmit = () => {
     const nextErrors = validateAppointmentInput(

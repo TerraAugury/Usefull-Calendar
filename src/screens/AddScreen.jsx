@@ -76,51 +76,6 @@ export default function AddScreen() {
     : ''
 
   useEffect(() => {
-    if (timeMode !== 'timezone') {
-      if (ui.addDraft.timeZone || ui.addDraft.timeZoneSource) {
-        dispatch({
-          type: 'SET_ADD_DRAFT',
-          values: { timeZone: '', timeZoneSource: '' },
-        })
-      }
-      if (forceTimeZonePicker) {
-        setForceTimeZonePicker(false)
-      }
-      return
-    }
-    if (
-      resolvedTimeZone.timeZone &&
-      (resolvedTimeZone.timeZone !== ui.addDraft.timeZone ||
-        resolvedTimeZone.source !== ui.addDraft.timeZoneSource)
-    ) {
-      dispatch({
-        type: 'SET_ADD_DRAFT',
-        values: {
-          timeZone: resolvedTimeZone.timeZone,
-          timeZoneSource: resolvedTimeZone.source,
-        },
-      })
-    }
-    if (
-      !resolvedTimeZone.timeZone &&
-      (ui.addDraft.timeZone || ui.addDraft.timeZoneSource)
-    ) {
-      dispatch({
-        type: 'SET_ADD_DRAFT',
-        values: { timeZone: '', timeZoneSource: '' },
-      })
-    }
-  }, [
-    timeMode,
-    resolvedTimeZone.timeZone,
-    resolvedTimeZone.source,
-    ui.addDraft.timeZone,
-    ui.addDraft.timeZoneSource,
-    dispatch,
-    forceTimeZonePicker,
-  ])
-
-  useEffect(() => {
     const startMinutes = timeStringToMinutes(ui.addDraft.startTime)
     const endMinutes = timeStringToMinutes(ui.addDraft.endTime)
     if (
