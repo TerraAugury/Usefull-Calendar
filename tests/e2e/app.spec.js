@@ -99,6 +99,41 @@ test('calendar grid opens day sheet with appointments', async ({ page }) => {
   await expect(page.getByText('Evening walk')).toBeVisible()
 })
 
+test('calendar grid fits mobile viewport without horizontal scroll', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  const seedData = buildSeedData()
+  await initApp(page, { seedData })
+
+  const switcher = page.locator('.calendar-view-switcher')
+  await switcher.getByRole('button', { name: 'Calendar' }).click()
+  const grid = page.locator('.calendar-grid')
+  await expect(grid).toBeVisible()
+
+  const weekHeaders = page.locator('.calendar-weekday')
+  await expect(weekHeaders).toHaveCount(7)
+  for (let i = 0; i < 7; i += 1) {
+    await expect(weekHeaders.nth(i)).toBeVisible()
+  }
+
+  const gridBox = await grid.boundingBox()
+  expect(gridBox?.width).toBeLessThanOrEqual(390)
+  const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }))
+  expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1)
+
+  await page.getByRole('button', { name: 'Week' }).click()
+  await expect(page.locator('.calendar-grid--week')).toBeVisible()
+  const weekBox = await page.locator('.calendar-grid--week').boundingBox()
+  expect(weekBox?.width).toBeLessThanOrEqual(390)
+  const weekScroll = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }))
+  expect(weekScroll.scrollWidth).toBeLessThanOrEqual(weekScroll.clientWidth + 1)
+})
+
 test('timezone mode: create appointment with Europe/Paris', async ({ page }) => {
   const seedData = buildSeedData({ timeMode: 'timezone' })
   await initApp(page, { seedData })

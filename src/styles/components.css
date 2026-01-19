@@ -243,11 +243,17 @@
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: var(--space-2);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .calendar-weekday {
+  min-width: 0;
+  box-sizing: border-box;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-2);
@@ -256,6 +262,8 @@
 }
 
 .calendar-day {
+  min-width: 0;
+  box-sizing: border-box;
   min-height: 72px;
   border-radius: 12px;
   border: 1px solid var(--border);
@@ -297,6 +305,7 @@
   align-items: center;
   gap: 4px;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .calendar-day__country {
@@ -304,9 +313,17 @@
   font-weight: 500;
   line-height: 1.2;
   max-width: 100%;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.calendar-day__country .countryBadge__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .detail-country {
