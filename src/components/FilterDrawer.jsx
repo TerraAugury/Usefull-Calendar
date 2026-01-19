@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
+import CalendarViewSwitcher from './CalendarViewSwitcher'
 import { IconClose, IconMenu } from './Icons'
 
 export default function FilterDrawer({
@@ -11,9 +12,37 @@ export default function FilterDrawer({
   showPast,
   onToggleShowPast,
   mode = 'agenda',
+  viewMode,
+  gridMode,
+  onViewModeChange,
+  onGridModeChange,
+  paxNames = [],
+  selectedPaxName,
+  onSelectPax,
+  open: openProp,
+  onOpenChange,
+  focusOnPax = false,
 }) {
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const paxSelectRef = useRef(null)
+  const open = typeof openProp === 'boolean' ? openProp : internalOpen
+  const setOpen = (next) => {
+    if (onOpenChange) {
+      onOpenChange(next)
+    }
+    if (typeof openProp !== 'boolean') {
+      setInternalOpen(next)
+    }
+  }
   const showAgendaFields = mode === 'agenda'
+  const showOptions = typeof onViewModeChange === 'function'
+  const showPax = paxNames.length > 0 && typeof onSelectPax === 'function'
+
+  useEffect(() => {
+    if (open && focusOnPax && paxSelectRef.current) {
+      paxSelectRef.current.focus()
+    }
+  }, [open, focusOnPax])
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
@@ -39,6 +68,51 @@ export default function FilterDrawer({
               ? 'Filter appointments by search, category, date range, and past visibility.'
               : 'Filter appointments by category and past visibility.'}
           </Dialog.Description>
+
+          {showOptions ? (
+            <div className="drawer-section">
+              <div className="drawer-section__title">Calendar options</div>
+              <CalendarViewSwitcher
+                viewMode={viewMode}
+                gridMode={gridMode}
+                onViewModeChange={onViewModeChange}
+                onGridModeChange={onGridModeChange}
+              />
+              {showPax ? (
+                <div className="form-field">
+                  <label className="form-label" htmlFor="pax-select">
+                    Passenger
+                  </label>
+                  <select
+                    id="pax-select"
+                    ref={paxSelectRef}
+                    value={selectedPaxName ?? ''}
+                    onChange={(event) => onSelectPax(event.target.value)}
+                  >
+                    <option value="">Select passenger</option>
+                    {paxNames.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+              {typeof onToggleShowPast === 'function' ? (
+                <div className="form-field">
+                  <span className="form-label">Past appointments</span>
+                  <button
+                    className="btn btn-secondary"
+                    type="button"
+                    aria-pressed={showPast}
+                    onClick={() => onToggleShowPast(!showPast)}
+                  >
+                    {showPast ? 'Hide past appointments' : 'Show past appointments'}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           {showAgendaFields ? (
             <div className="form-field">
@@ -99,18 +173,6 @@ export default function FilterDrawer({
               </div>
             </div>
           ) : null}
-
-          <div className="form-field">
-            <span className="form-label">Past appointments</span>
-            <button
-              className="btn btn-secondary"
-              type="button"
-              aria-pressed={showPast}
-              onClick={() => onToggleShowPast(!showPast)}
-            >
-              {showPast ? 'Hide past appointments' : 'Show past appointments'}
-            </button>
-          </div>
 
           <button className="btn btn-secondary" type="button" onClick={onReset}>
             Reset filters

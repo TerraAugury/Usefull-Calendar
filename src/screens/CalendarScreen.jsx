@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import AppointmentCard from '../components/AppointmentCard'
-import CalendarViewSwitcher from '../components/CalendarViewSwitcher'
 import CountryBadge from '../components/CountryBadge'
 import DaySheet from '../components/DaySheet'
 import DetailsDialog from '../components/DetailsDialog'
@@ -25,6 +24,7 @@ import {
 } from '../utils/calendar'
 import { formatDateLabel, formatDateYYYYMMDD, getTodayYYYYMMDD } from '../utils/dates'
 import { DEFAULT_PAX_STATE, getPaxCountryForDate } from '../utils/pax'
+import { IconChevronLeft, IconChevronRight } from '../components/Icons'
 
 export default function CalendarScreen() {
   const { appointments, categories, ui, preferences, pax } = useAppState()
@@ -34,6 +34,8 @@ export default function CalendarScreen() {
   const [editingId, setEditingId] = useState(null)
   const [calendarAnchor, setCalendarAnchor] = useState(() => new Date())
   const [daySheetDate, setDaySheetDate] = useState(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [drawerFocus, setDrawerFocus] = useState('')
 
   const viewMode = preferences.calendarViewMode ?? 'agenda'
   const gridMode = preferences.calendarGridMode ?? 'month'
@@ -179,23 +181,33 @@ export default function CalendarScreen() {
 
   const weekLabel = useMemo(() => {
     if (gridMode !== 'week') return ''
+    const sameMonth =
+      weekRange.start.getMonth() === weekRange.end.getMonth() &&
+      weekRange.start.getFullYear() === weekRange.end.getFullYear()
     const startLabel = weekRange.start.toLocaleDateString(undefined, {
-      month: 'short',
       day: 'numeric',
+      ...(sameMonth ? {} : { month: 'short' }),
     })
     const endLabel = weekRange.end.toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     })
-    return `${startLabel} – ${endLabel}`
+    return `${startLabel}-${endLabel}`
   }, [gridMode, weekRange.end, weekRange.start])
 
   const monthLabel = useMemo(() => {
     if (gridMode !== 'month') return ''
     const date = new Date(calendarAnchor.getFullYear(), calendarAnchor.getMonth(), 1)
-    return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+    return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
   }, [calendarAnchor, gridMode])
+
+  const headerLabel =
+    viewMode === 'calendar'
+      ? gridMode === 'month'
+        ? monthLabel
+        : weekLabel
+      : 'Agenda'
 
   const daySheetAppointments = daySheetDate
     ? appointmentMap.get(daySheetDate) ?? []
@@ -205,64 +217,106 @@ export default function CalendarScreen() {
 
   return (
     <section className="screen">
-      <header className="screen-header calendar-header">
-        <div className="calendar-header__row">
-          <h1 className="screen-title">Calendar</h1>
-          <FilterDrawer
-            filters={ui.filters}
-            categories={categories}
-            onChange={(filters) => dispatch({ type: 'SET_FILTERS', filters })}
-            onReset={() => dispatch({ type: 'RESET_FILTERS' })}
-            active={filtersActive}
-            showPast={showPast}
-            mode={viewMode}
-            onToggleShowPast={(value) =>
-              dispatch({ type: 'SET_PREFERENCES', values: { showPast: value } })
-            }
-          />
-        </div>
-        <CalendarViewSwitcher
-          viewMode={viewMode}
-          gridMode={gridMode}
-          onViewModeChange={(mode) => {
-            if (mode !== 'calendar') {
-              setDaySheetDate(null)
-            }
-            dispatch({
-              type: 'SET_PREFERENCES',
-              values: { calendarViewMode: mode },
-            })
-          }}
-          onGridModeChange={(mode) =>
-            dispatch({ type: 'SET_PREFERENCES', values: { calendarGridMode: mode } })
-          }
-        />
-        {paxNames.length ? (
-          <div className="pax-selector">
-            <label className="form-label" htmlFor="pax-select">
-              Passenger
-            </label>
-            <select
-              id="pax-select"
-              value={selectedPaxName ?? ''}
-              onChange={(event) =>
+      <header className="screen-header calendar-header calendar-header--compact">
+        <h1 className="sr-only">Calendar</h1>
+        <div className="calendar-compact-bar">
+          <div className="calendar-compact-period">
+            <button
+              className="icon-button icon-button--sm"
+              type="button"
+              aria-label="Previous period"
+              onClick={() =>
+                setCalendarAnchor((prev) =>
+                  viewMode === 'calendar' && gridMode === 'month'
+                    ? new Date(prev.getFullYear(), prev.getMonth() - 1, 1)
+                    : addDays(prev, -7),
+                )
+              }
+            >
+              <IconChevronLeft className="tab-icon" />
+            </button>
+            <div className="calendar-compact-label">{headerLabel}</div>
+            <button
+              className="icon-button icon-button--sm"
+              type="button"
+              aria-label="Next period"
+              onClick={() =>
+                setCalendarAnchor((prev) =>
+                  viewMode === 'calendar' && gridMode === 'month'
+                    ? new Date(prev.getFullYear(), prev.getMonth() + 1, 1)
+                    : addDays(prev, 7),
+                )
+              }
+            >
+              <IconChevronRight className="tab-icon" />
+            </button>
+          </div>
+          <div className="calendar-compact-actions">
+            <button
+              className="calendar-today-button"
+              type="button"
+              onClick={() => setCalendarAnchor(new Date())}
+            >
+              Today
+            </button>
+            <FilterDrawer
+              open={drawerOpen}
+              onOpenChange={(open) => {
+                setDrawerOpen(open)
+                if (!open) setDrawerFocus('')
+              }}
+              focusOnPax={drawerFocus === 'pax'}
+              filters={ui.filters}
+              categories={categories}
+              onChange={(filters) => dispatch({ type: 'SET_FILTERS', filters })}
+              onReset={() => dispatch({ type: 'RESET_FILTERS' })}
+              active={filtersActive}
+              showPast={showPast}
+              mode={viewMode}
+              viewMode={viewMode}
+              gridMode={gridMode}
+              onViewModeChange={(mode) => {
+                if (mode !== 'calendar') {
+                  setDaySheetDate(null)
+                }
+                dispatch({
+                  type: 'SET_PREFERENCES',
+                  values: { calendarViewMode: mode },
+                })
+              }}
+              onGridModeChange={(mode) =>
+                dispatch({ type: 'SET_PREFERENCES', values: { calendarGridMode: mode } })
+              }
+              paxNames={paxNames}
+              selectedPaxName={selectedPaxName}
+              onSelectPax={(value) =>
                 dispatch({
                   type: 'SET_PAX_STATE',
                   values: {
                     ...paxState,
-                    selectedPaxName: event.target.value || null,
+                    selectedPaxName: value || null,
                   },
                 })
               }
-            >
-              <option value="">Select passenger</option>
-              {paxNames.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
+              onToggleShowPast={(value) =>
+                dispatch({ type: 'SET_PREFERENCES', values: { showPast: value } })
+              }
+            />
           </div>
+        </div>
+        {selectedPaxName ? (
+          <button
+            className="pax-chip"
+            type="button"
+            onClick={() => {
+              setDrawerFocus('pax')
+              setDrawerOpen(true)
+            }}
+            aria-label={`Passenger ${selectedPaxName}`}
+          >
+            <span aria-hidden="true">👤</span>
+            <span className="pax-chip__name">{selectedPaxName}</span>
+          </button>
         ) : null}
       </header>
 
@@ -383,58 +437,17 @@ export default function CalendarScreen() {
 
       {viewMode === 'calendar' ? (
         <>
-          <div className="calendar-nav">
-            <div className="calendar-nav__title">
-              {gridMode === 'month' ? monthLabel : weekLabel}
-            </div>
-            <div className="calendar-nav__actions">
-              <button
-                className="calendar-nav-button"
-                type="button"
-                onClick={() =>
-                  setCalendarAnchor((prev) =>
-                    gridMode === 'month'
-                      ? new Date(prev.getFullYear(), prev.getMonth() - 1, 1)
-                      : addDays(prev, -7),
-                  )
-                }
-              >
-                Prev
-              </button>
-              <button
-                className="calendar-nav-button"
-                type="button"
-                onClick={() => setCalendarAnchor(new Date())}
-              >
-                Today
-              </button>
-              <button
-                className="calendar-nav-button"
-                type="button"
-                onClick={() =>
-                  setCalendarAnchor((prev) =>
-                    gridMode === 'month'
-                      ? new Date(prev.getFullYear(), prev.getMonth() + 1, 1)
-                      : addDays(prev, 7),
-                  )
-                }
-              >
-                Next
-              </button>
-            </div>
-          </div>
-
           {gridMode === 'month' ? (
-              <MonthGrid
-                year={calendarAnchor.getFullYear()}
-                monthIndex={calendarAnchor.getMonth()}
-                appointmentsByDate={appointmentMap}
-                categoriesById={categoriesById}
-                todayDateStr={todayDateStr}
-                showPast={showPast}
-                getCountryForDate={countryForDate}
-                onSelectDate={(dateStr) => setDaySheetDate(dateStr)}
-              />
+            <MonthGrid
+              year={calendarAnchor.getFullYear()}
+              monthIndex={calendarAnchor.getMonth()}
+              appointmentsByDate={appointmentMap}
+              categoriesById={categoriesById}
+              todayDateStr={todayDateStr}
+              showPast={showPast}
+              getCountryForDate={countryForDate}
+              onSelectDate={(dateStr) => setDaySheetDate(dateStr)}
+            />
           ) : (
             <>
               <WeekGrid

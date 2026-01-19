@@ -74,14 +74,27 @@ describe('Calendar view switcher', () => {
     expect(container.querySelector('.agenda')).toBeInTheDocument()
 
     await act(async () => {
-      const viewGroup = screen.getByRole('group', { name: 'Calendar view' })
-      await user.click(within(viewGroup).getByRole('button', { name: 'Calendar' }))
+      await user.click(screen.getByLabelText(/open filters/i))
+    })
+    const drawer = screen.getByRole('dialog', { name: 'Filters' })
+    await act(async () => {
+      await user.click(within(drawer).getByRole('button', { name: 'Calendar' }))
+    })
+    await act(async () => {
+      await user.keyboard('{Escape}')
     })
 
     expect(container.querySelector('.calendar-grid')).toBeInTheDocument()
 
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: 'Week' }))
+      await user.click(screen.getByLabelText(/open filters/i))
+    })
+    const drawerWeek = screen.getByRole('dialog', { name: 'Filters' })
+    await act(async () => {
+      await user.click(within(drawerWeek).getByRole('button', { name: 'Week' }))
+    })
+    await act(async () => {
+      await user.keyboard('{Escape}')
     })
 
     expect(container.querySelector('.calendar-grid--week')).toBeInTheDocument()
@@ -183,7 +196,7 @@ describe('Calendar view switcher', () => {
 
   it('toggles past items in the week list', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date(2026, 0, 10, 9, 0, 0, 0))
+    vi.setSystemTime(new Date(Date.UTC(2026, 0, 10, 9, 0, 0, 0)))
     const user = userEvent.setup()
     const pastTime = buildUtcFields({
       date: '2026-01-10',

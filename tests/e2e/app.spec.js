@@ -91,8 +91,12 @@ test('calendar grid opens day sheet with appointments', async ({ page }) => {
   const seedData = buildSeedData()
   await initApp(page, { seedData })
 
-  const switcher = page.locator('.calendar-view-switcher')
-  await switcher.getByRole('button', { name: 'Calendar' }).click()
+  await page.getByLabel('Open filters').click()
+  const drawer = page.getByRole('dialog', { name: 'Filters' })
+  await expect(drawer).toBeVisible()
+  await drawer.getByRole('button', { name: 'Calendar' }).click()
+  await page.keyboard.press('Escape')
+  await expect(drawer).not.toBeVisible()
   await expect(page.locator('.calendar-grid')).toBeVisible()
 
   await page.locator('[data-date="2026-01-10"]').click()
@@ -102,10 +106,22 @@ test('calendar grid opens day sheet with appointments', async ({ page }) => {
 test('calendar grid fits mobile viewport without horizontal scroll', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   const seedData = buildSeedData()
+  seedData.pax = {
+    selectedPaxName: 'Delphine',
+    paxNames: ['Delphine'],
+    paxLocations: {},
+  }
   await initApp(page, { seedData })
 
-  const switcher = page.locator('.calendar-view-switcher')
-  await switcher.getByRole('button', { name: 'Calendar' }).click()
+  await page.getByLabel('Open filters').click()
+  const drawer = page.getByRole('dialog', { name: 'Filters' })
+  await expect(drawer).toBeVisible()
+  await expect(drawer.getByRole('button', { name: 'Agenda' })).toBeVisible()
+  await expect(drawer.getByRole('button', { name: 'Calendar' })).toBeVisible()
+  await expect(drawer.getByLabel('Passenger')).toBeVisible()
+  await drawer.getByRole('button', { name: 'Calendar' }).click()
+  await page.keyboard.press('Escape')
+  await expect(drawer).not.toBeVisible()
   const grid = page.locator('.calendar-grid')
   await expect(grid).toBeVisible()
 
@@ -117,13 +133,19 @@ test('calendar grid fits mobile viewport without horizontal scroll', async ({ pa
 
   const gridBox = await grid.boundingBox()
   expect(gridBox?.width).toBeLessThanOrEqual(390)
+  const headerBox = await page.locator('.calendar-compact-bar').boundingBox()
+  expect(headerBox?.height).toBeLessThanOrEqual(60)
   const { scrollWidth, clientWidth } = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
     clientWidth: document.documentElement.clientWidth,
   }))
   expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 1)
 
-  await page.getByRole('button', { name: 'Week' }).click()
+  await page.getByLabel('Open filters').click()
+  const weekDrawer = page.getByRole('dialog', { name: 'Filters' })
+  await expect(weekDrawer).toBeVisible()
+  await weekDrawer.getByRole('button', { name: 'Week' }).click()
+  await page.keyboard.press('Escape')
   await expect(page.locator('.calendar-grid--week')).toBeVisible()
   const weekBox = await page.locator('.calendar-grid--week').boundingBox()
   expect(weekBox?.width).toBeLessThanOrEqual(390)
