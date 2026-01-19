@@ -24,6 +24,33 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-restricted-globals': ['error', 'localStorage', 'sessionStorage'],
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'window',
+          property: 'localStorage',
+          message: 'Use IndexedDB storage helpers instead of localStorage.',
+        },
+        {
+          object: 'window',
+          property: 'sessionStorage',
+          message: 'Use IndexedDB storage helpers instead of sessionStorage.',
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "Literal[value=/app_(appointments|categories|preferences)/]",
+          message: 'Legacy localStorage keys are not allowed.',
+        },
+        {
+          selector:
+            "TemplateElement[value.raw=/app_(appointments|categories|preferences)/]",
+          message: 'Legacy localStorage keys are not allowed.',
+        },
+      ],
     },
   },
   {
