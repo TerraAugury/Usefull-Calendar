@@ -227,14 +227,6 @@ export default function SettingsScreen() {
       </div>
 
       <div className="form-field">
-        <label className="form-label" htmlFor="time-mode">
-          Time handling
-        </label>
-        <input id="time-mode" value="Timezone" readOnly />
-        <p className="helper-text">Timezone-based scheduling is always enabled.</p>
-      </div>
-
-      <div className="form-field">
         <span className="form-label">Export</span>
         <button className="btn btn-secondary" type="button" onClick={handleExport}>
           Export JSON
