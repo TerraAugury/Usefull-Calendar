@@ -18,12 +18,20 @@ body {
   line-height: 1.5;
 }
 
-html[data-test='1'] {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+html[data-e2e='1'] {
   scrollbar-gutter: stable both-edges;
 }
 
-html[data-test='1']::-webkit-scrollbar {
+html[data-e2e='1'],
+html[data-e2e='1'] body {
+  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+
+html[data-e2e='1'] * {
+  caret-color: transparent;
+}
+
+html[data-e2e='1']::-webkit-scrollbar {
   width: 0;
   height: 0;
 }

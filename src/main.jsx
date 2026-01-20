@@ -11,7 +11,7 @@ const isPlaywright =
       navigator.userAgent.includes('Playwright')))
 
 if (isPlaywright) {
-  document.documentElement.setAttribute('data-test', '1')
+  document.documentElement.setAttribute('data-e2e', '1')
 }
 
 createRoot(document.getElementById('root')).render(

@@ -224,7 +224,7 @@ export default function CalendarScreen() {
     daySheetDate && countryForDate ? countryForDate(daySheetDate) : null
 
   return (
-    <section className="screen">
+    <section className="screen" data-testid="calendar-root">
       <header className="screen-header calendar-header calendar-header--compact">
         <h1 className="sr-only">Calendar</h1>
         <div className="calendar-compact-bar">

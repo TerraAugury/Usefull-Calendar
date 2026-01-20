@@ -18,9 +18,12 @@ export default defineConfig({
       snapshotPathTemplate:
         '{testDir}/visual.spec.js-snapshots/{arg}-linux{ext}',
       use: {
+        browserName: 'chromium',
         viewport: { width: 1280, height: 720 },
         deviceScaleFactor: 1,
         reducedMotion: 'reduce',
+        timezoneId: 'Europe/Paris',
+        locale: 'en-GB',
       },
     },
   ],

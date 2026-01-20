@@ -37,9 +37,6 @@ npm run test:visual:update
 
 Visual snapshots are generated on Linux (CI). For canonical baselines, update snapshots on Linux or via CI.
 
-If you need linux-baseline updates from CI, run the "Update Visual Snapshots"
-workflow in GitHub Actions. It will open a PR with refreshed snapshots.
-
 ## Airport dataset generation
 
 Generate the static airport mapping used for timezone and country lookups:

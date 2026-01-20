@@ -5,6 +5,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: "Update visual snapshots"
+        type: boolean
+        default: false
 
 jobs:
   test:
@@ -19,7 +24,7 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
-      - run: npx playwright install --with-deps
+      - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - name: Upload Playwright artifacts
         if: failure()
@@ -41,7 +46,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - run: npx playwright install --with-deps
+      - run: npx playwright install --with-deps chromium
       - run: npx playwright test -c playwright.preview.config.js tests/e2e/smoke-preview.spec.js
       - name: Upload Playwright artifacts
         if: failure()
@@ -63,8 +68,19 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps
-      - run: npm run test:visual
+      - run: npx playwright install --with-deps chromium
+      - name: Run visual snapshots
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.update_snapshots == false }}
+        run: npm run test:visual
+      - name: Update visual snapshots
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_snapshots == true }}
+        run: npm run test:visual -- --update-snapshots
+      - name: Upload visual snapshots
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_snapshots == true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-snapshots
+          path: tests/e2e/visual.spec.js-snapshots
       - name: Upload Playwright artifacts
         if: failure()
         uses: actions/upload-artifact@v4

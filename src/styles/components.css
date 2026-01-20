@@ -758,12 +758,12 @@
   z-index: 1001;
 }
 
-html[data-test='1'] .drawer-content {
+html[data-e2e='1'] .drawer-content {
   height: 100vh;
   scrollbar-gutter: stable both-edges;
 }
 
-html[data-test='1'] .drawer-content::-webkit-scrollbar {
+html[data-e2e='1'] .drawer-content::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
@@ -821,9 +821,14 @@ html[data-test='1'] .drawer-content::-webkit-scrollbar {
   z-index: 1001;
 }
 
-html[data-test='1'] .sheet-content,
-html[data-test='1'] .dialog-content {
+html[data-e2e='1'] .sheet-content,
+html[data-e2e='1'] .dialog-content {
   scrollbar-gutter: stable both-edges;
+}
+
+html[data-e2e='1'] .sheet-content,
+html[data-e2e='1'] .dialog-content {
+  max-height: calc(100vh - (var(--space-4) * 2));
 }
 
 .sheet-content[data-state='open'] {
