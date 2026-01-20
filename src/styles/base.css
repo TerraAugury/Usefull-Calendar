@@ -27,6 +27,25 @@ html[data-e2e='1'] body {
   font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
 }
 
+html[data-visual-test='1'] {
+  --visual-vh: 100vh;
+  scrollbar-gutter: stable both-edges;
+}
+
+html[data-visual-test='1'],
+html[data-visual-test='1'] body {
+  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+}
+
+html[data-visual-test='1'] * {
+  caret-color: transparent;
+}
+
+html[data-visual-test='1']::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 html[data-e2e='1'] * {
   caret-color: transparent;
 }

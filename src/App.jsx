@@ -20,6 +20,25 @@ export function AppShell() {
     }
   }, [preferences.theme])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    if (!isHydrated) {
+      window.__APP_READY__ = false
+      return undefined
+    }
+    let frame1 = 0
+    let frame2 = 0
+    frame1 = window.requestAnimationFrame(() => {
+      frame2 = window.requestAnimationFrame(() => {
+        window.__APP_READY__ = true
+      })
+    })
+    return () => {
+      window.cancelAnimationFrame(frame1)
+      window.cancelAnimationFrame(frame2)
+    }
+  }, [isHydrated])
+
   return (
     <div className="app">
       <main className="app-main" data-hydrated={isHydrated ? 'true' : 'false'}>

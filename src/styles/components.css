@@ -10,6 +10,11 @@
   padding-bottom: calc(var(--tab-height) + env(safe-area-inset-bottom));
 }
 
+html[data-visual-test='1'] .app-main {
+  height: var(--visual-vh);
+  overflow: hidden;
+}
+
 .screen {
   max-width: var(--content-max);
   margin: 0 auto;
@@ -174,6 +179,11 @@
   flex-direction: column;
   align-items: stretch;
   gap: var(--space-2);
+}
+
+html[data-visual-test='1'] [data-testid='calendar-root'] {
+  height: var(--visual-vh);
+  overflow: hidden;
 }
 
 .calendar-header--compact {
@@ -768,6 +778,16 @@ html[data-e2e='1'] .drawer-content::-webkit-scrollbar {
   height: 0;
 }
 
+html[data-visual-test='1'] .drawer-content {
+  height: var(--visual-vh);
+  scrollbar-gutter: stable both-edges;
+}
+
+html[data-visual-test='1'] .drawer-content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 .drawer-section {
   display: flex;
   flex-direction: column;
@@ -829,6 +849,12 @@ html[data-e2e='1'] .dialog-content {
 html[data-e2e='1'] .sheet-content,
 html[data-e2e='1'] .dialog-content {
   max-height: calc(100vh - (var(--space-4) * 2));
+}
+
+html[data-visual-test='1'] .sheet-content,
+html[data-visual-test='1'] .dialog-content {
+  scrollbar-gutter: stable both-edges;
+  max-height: calc(var(--visual-vh) - (var(--space-4) * 2));
 }
 
 .sheet-content[data-state='open'] {
