@@ -252,6 +252,20 @@ export default function CalendarScreen() {
             </button>
           </div>
           <div className="calendar-compact-actions">
+            {selectedPaxName ? (
+              <button
+                className="pax-chip"
+                type="button"
+                onClick={() => {
+                  setDrawerFocus('pax')
+                  setDrawerOpen(true)
+                }}
+                aria-label={`Passenger ${selectedPaxName}`}
+              >
+                <span aria-hidden="true">P</span>
+                <span className="pax-chip__name">{selectedPaxName}</span>
+              </button>
+            ) : null}
             <button
               className="calendar-today-button"
               type="button"
@@ -304,20 +318,6 @@ export default function CalendarScreen() {
             />
           </div>
         </div>
-        {selectedPaxName ? (
-          <button
-            className="pax-chip"
-            type="button"
-            onClick={() => {
-              setDrawerFocus('pax')
-              setDrawerOpen(true)
-            }}
-            aria-label={`Passenger ${selectedPaxName}`}
-          >
-            <span aria-hidden="true">👤</span>
-            <span className="pax-chip__name">{selectedPaxName}</span>
-          </button>
-        ) : null}
       </header>
 
       {viewMode === 'agenda' && showEmpty ? (
@@ -573,3 +573,4 @@ export default function CalendarScreen() {
     </section>
   )
 }
+

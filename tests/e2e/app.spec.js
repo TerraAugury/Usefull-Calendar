@@ -146,6 +146,17 @@ test('calendar grid fits mobile viewport without horizontal scroll', async ({ pa
   const grid = page.locator('.calendar-grid')
   await expect(grid).toBeVisible()
 
+  const tabBar = page.locator('.tab-bar')
+  const tabBox = await tabBar.boundingBox()
+  expect(tabBox?.height).toBeGreaterThanOrEqual(44)
+  expect(tabBox?.height).toBeLessThanOrEqual(52)
+  const mainPadding = await page.evaluate(() => {
+    const main = document.querySelector('.app-main')
+    if (!main) return 0
+    return parseFloat(window.getComputedStyle(main).paddingBottom || '0')
+  })
+  expect(mainPadding).toBeGreaterThanOrEqual(tabBox?.height ?? 0)
+
   const weekHeaders = page.locator('.calendar-weekday')
   await expect(weekHeaders).toHaveCount(7)
   for (let i = 0; i < 7; i += 1) {
@@ -175,6 +186,31 @@ test('calendar grid fits mobile viewport without horizontal scroll', async ({ pa
     clientWidth: document.documentElement.clientWidth,
   }))
   expect(weekScroll.scrollWidth).toBeLessThanOrEqual(weekScroll.clientWidth + 1)
+})
+
+test('calendar header packs pax chip in landscape', async ({ page }) => {
+  await page.setViewportSize({ width: 932, height: 430 })
+  const seedData = buildSeedData()
+  seedData.pax = {
+    selectedPaxName: 'Delphine Elamine',
+    paxNames: ['Delphine Elamine'],
+    paxLocations: {},
+  }
+  await initApp(page, { seedData })
+
+  const chip = page.locator('.pax-chip')
+  const bar = page.locator('.calendar-compact-bar')
+  await expect(chip).toBeVisible()
+  await expect(bar).toBeVisible()
+
+  const chipBox = await chip.boundingBox()
+  const barBox = await bar.boundingBox()
+  expect(chipBox?.y).toBeGreaterThanOrEqual((barBox?.y ?? 0) - 1)
+  expect((chipBox?.y ?? 0) + (chipBox?.height ?? 0)).toBeLessThanOrEqual(
+    (barBox?.y ?? 0) + (barBox?.height ?? 0) + 1,
+  )
+
+  await expect(page.getByRole('button', { name: 'Today' })).toBeHidden()
 })
 
 test('timezone mode: create appointment with Europe/Paris', async ({ page }) => {
