@@ -103,7 +103,7 @@ test('date and time inputs enforce min values', async ({ page }) => {
 
   await dateInput.fill('2026-01-10')
   const timeInput = page.getByLabel('Start time')
-  await expect(timeInput).toHaveAttribute('min', '10:00')
+  await expect(timeInput).toHaveAttribute('min', '11:00')
 })
 
 test('calendar grid opens day sheet with appointments', async ({ page }) => {

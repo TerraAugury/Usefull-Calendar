@@ -1,4 +1,4 @@
-process.env.TZ = 'UTC'
+process.env.TZ = 'Europe/Paris'
 
 import { defineConfig } from '@playwright/test'
 
@@ -29,7 +29,8 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    timezoneId: 'UTC',
+    timezoneId: 'Europe/Paris',
+    locale: 'en-GB',
     reducedMotion: 'reduce',
   },
   webServer: {

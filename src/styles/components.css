@@ -758,6 +758,16 @@
   z-index: 1001;
 }
 
+html[data-test='1'] .drawer-content {
+  height: 100vh;
+  scrollbar-gutter: stable both-edges;
+}
+
+html[data-test='1'] .drawer-content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 .drawer-section {
   display: flex;
   flex-direction: column;
@@ -809,6 +819,11 @@
   transform: translateY(100%);
   transition: transform 200ms ease;
   z-index: 1001;
+}
+
+html[data-test='1'] .sheet-content,
+html[data-test='1'] .dialog-content {
+  scrollbar-gutter: stable both-edges;
 }
 
 .sheet-content[data-state='open'] {

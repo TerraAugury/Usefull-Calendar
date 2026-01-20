@@ -10,7 +10,7 @@ test('visual: calendar light (mobile) @visual', async ({ page }) => {
     () => document.documentElement.getAttribute('data-theme') === 'light',
   )
   await disableAnimations(page)
-  await expect(page).toHaveScreenshot('calendar-light-mobile.png', { fullPage: true })
+  await expect(page).toHaveScreenshot('calendar-light-mobile.png')
 })
 
 test('visual: calendar dark (desktop) @visual', async ({ page }) => {
@@ -22,7 +22,7 @@ test('visual: calendar dark (desktop) @visual', async ({ page }) => {
     () => document.documentElement.getAttribute('data-theme') === 'dark',
   )
   await disableAnimations(page)
-  await expect(page).toHaveScreenshot('calendar-dark-desktop.png', { fullPage: true })
+  await expect(page).toHaveScreenshot('calendar-dark-desktop.png')
 })
 
 test('visual: filter drawer open @visual', async ({ page }) => {
@@ -60,7 +60,8 @@ test('visual: appointment details dialog open @visual', async ({ page }) => {
     () => document.documentElement.getAttribute('data-theme') === 'light',
   )
   await page.locator('[data-appointment-id="apt_sample_08"]').click()
-  await page.waitForSelector('.sheet-content')
+  const sheet = page.locator('.sheet-content')
+  await sheet.waitFor({ state: 'visible' })
   await disableAnimations(page)
-  await expect(page).toHaveScreenshot('details-dialog-open.png', { fullPage: true })
+  await expect(sheet).toHaveScreenshot('details-dialog-open.png')
 })
