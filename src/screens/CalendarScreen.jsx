@@ -23,7 +23,11 @@ import {
   getWeekRange,
 } from '../utils/calendar'
 import { formatDateLabel, formatDateYYYYMMDD, getTodayYYYYMMDD } from '../utils/dates'
-import { DEFAULT_PAX_STATE, getPaxCountryForDate } from '../utils/pax'
+import {
+  DEFAULT_PAX_STATE,
+  getPassengerInitials,
+  getPaxCountryForDate,
+} from '../utils/pax'
 import { IconChevronLeft, IconChevronRight } from '../components/Icons'
 
 export default function CalendarScreen() {
@@ -61,6 +65,10 @@ export default function CalendarScreen() {
   const paxState = pax ?? DEFAULT_PAX_STATE
   const paxNames = paxState.paxNames ?? []
   const selectedPaxName = paxState.selectedPaxName
+  const passengerInitials = selectedPaxName
+    ? getPassengerInitials(selectedPaxName)
+    : ''
+
   const paxFlights = useMemo(() => {
     if (!selectedPaxName) return []
     return paxState.paxLocations?.[selectedPaxName]?.flights ?? []
@@ -262,7 +270,7 @@ export default function CalendarScreen() {
                 }}
                 aria-label={`Passenger ${selectedPaxName}`}
               >
-                <span aria-hidden="true">P</span>
+                <span className="pax-chip__initials">{passengerInitials}</span>
                 <span className="pax-chip__name">{selectedPaxName}</span>
               </button>
             ) : null}

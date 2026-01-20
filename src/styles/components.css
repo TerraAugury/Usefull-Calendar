@@ -186,6 +186,7 @@
   justify-content: space-between;
   gap: var(--space-2);
   min-height: 40px;
+  flex-wrap: nowrap;
 }
 
 .calendar-compact-period {
@@ -239,11 +240,37 @@
   max-width: 180px;
 }
 
+.pax-chip__initials {
+  display: none;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .pax-chip__name {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (max-width: 480px) and (min-height: 600px) {
+  .calendar-today-button {
+    display: none;
+  }
+
+  .pax-chip {
+    padding: 4px 8px;
+    max-width: 44px;
+    justify-content: center;
+  }
+
+  .pax-chip__initials {
+    display: inline-flex;
+  }
+
+  .pax-chip__name {
+    display: none;
+  }
 }
 
 @media (max-height: 430px) and (max-width: 932px) {
@@ -266,6 +293,14 @@
     align-self: center;
     flex: 0 1 auto;
     max-width: 160px;
+  }
+
+  .pax-chip__initials {
+    display: none;
+  }
+
+  .pax-chip__name {
+    display: inline;
   }
 }
 

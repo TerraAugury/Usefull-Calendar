@@ -145,6 +145,11 @@ test('calendar grid fits mobile viewport without horizontal scroll', async ({ pa
   await expect(drawer).not.toBeVisible()
   const grid = page.locator('.calendar-grid')
   await expect(grid).toBeVisible()
+  await expect(page.getByText('Jan 2026')).toBeVisible()
+
+  const portraitChip = page.locator('.pax-chip')
+  await expect(portraitChip.locator('.pax-chip__initials')).toHaveText('DE')
+  await expect(portraitChip.locator('.pax-chip__name')).toBeHidden()
 
   const tabBar = page.locator('.tab-bar')
   const tabBox = await tabBar.boundingBox()
@@ -199,9 +204,13 @@ test('calendar header packs pax chip in landscape', async ({ page }) => {
   await initApp(page, { seedData })
 
   const chip = page.locator('.pax-chip')
+  const chipInitials = chip.locator('.pax-chip__initials')
+  const chipName = chip.locator('.pax-chip__name')
   const bar = page.locator('.calendar-compact-bar')
   await expect(chip).toBeVisible()
   await expect(bar).toBeVisible()
+  await expect(chipName).toHaveText('Delphine Elamine')
+  await expect(chipInitials).toBeHidden()
 
   const chipBox = await chip.boundingBox()
   const barBox = await bar.boundingBox()
