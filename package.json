@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "check:icons": "npm run build && node scripts/check-icons.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
