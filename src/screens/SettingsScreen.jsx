@@ -81,8 +81,12 @@ export default function SettingsScreen() {
       const link = document.createElement('a')
       link.href = url
       link.download = 'appointment-notebook.json'
+      document.body.appendChild(link)
       link.click()
-      URL.revokeObjectURL(url)
+      link.remove()
+      setTimeout(() => {
+        URL.revokeObjectURL(url)
+      }, 250)
       dispatch({ type: 'SET_TOAST', message: 'Export ready.' })
     } catch {
       dispatch({ type: 'SET_TOAST', message: 'Export failed.' })
@@ -124,8 +128,15 @@ export default function SettingsScreen() {
     if (!importFile) return
     try {
       const text = await readFileAsText(importFile)
-      const parsed = parseImport(typeof text === 'string' ? text : '')
+      const safeText = typeof text === 'string' ? text : ''
+      const parsed = parseImport(safeText)
       if (!parsed) {
+        if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
+          console.error('Import JSON invalid.', {
+            length: safeText.length,
+            preview: safeText.slice(0, 200),
+          })
+        }
         setImportError('Invalid JSON file. Nothing was imported.')
         dispatch({ type: 'SET_TOAST', message: 'Invalid JSON file.' })
         resetImportSelection()

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import fs from 'fs/promises'
 import { Buffer } from 'buffer'
 import { buildSeedData, initApp } from './helpers.js'
 
@@ -106,4 +107,49 @@ test('persistence: add waits for hydration and survives reload', async ({ page }
   await page.reload()
   await page.waitForFunction(() => window.__APP_READY__ === true)
   await expect(page.getByText('Hydration hold')).toBeVisible()
+})
+
+test('persistence: export and re-import restores data', async ({ page }) => {
+  const seedData = buildSeedData()
+  await initApp(page, { seedData })
+
+  await page.getByRole('button', { name: 'Categories' }).click()
+  await page.getByLabel('Name').fill('Pilates')
+  await page.getByRole('button', { name: 'Add category' }).click()
+  await expect(page.getByText('Pilates')).toBeVisible()
+  await page.waitForTimeout(200)
+
+  await page.getByRole('button', { name: 'Settings' }).click()
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: /export json/i }).click()
+  const download = await downloadPromise
+  const downloadPath = await download.path()
+  expect(downloadPath).toBeTruthy()
+  const buffer = await fs.readFile(downloadPath)
+
+  await page.getByRole('button', { name: /reset all data/i }).click()
+  const resetDialog = page.getByRole('dialog', { name: /reset everything/i })
+  await expect(resetDialog).toBeVisible()
+  await resetDialog.getByRole('button', { name: 'Reset' }).click()
+  await expect(resetDialog).not.toBeVisible()
+
+  await page.getByRole('button', { name: 'Settings' }).click()
+  const importInput = page.locator('input#import-file')
+  await importInput.setInputFiles({
+    name: 'export.json',
+    mimeType: 'application/json',
+    buffer,
+  })
+  const importButton = page.locator('button', { hasText: 'Import JSON' })
+  await expect(importButton).toBeEnabled()
+  await importButton.click()
+  const confirmDialog = page.getByRole('dialog', { name: /overwrite all data/i })
+  await expect(confirmDialog).toBeVisible()
+  await confirmDialog.getByRole('button', { name: 'Overwrite' }).click()
+  await expect(confirmDialog).not.toBeVisible()
+
+  await page.getByRole('button', { name: 'Calendar' }).click()
+  await expect(page.getByText('Evening walk')).toBeVisible()
+  await page.getByRole('button', { name: 'Categories' }).click()
+  await expect(page.getByText('Pilates')).toBeVisible()
 })
