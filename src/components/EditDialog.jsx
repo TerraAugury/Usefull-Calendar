@@ -193,6 +193,7 @@ export default function EditDialog({
               values={draftForValidation}
               errors={visibleErrors}
               categories={categories}
+              idPrefix="edit"
               onChange={(patch) => {
                 if (
                   Object.prototype.hasOwnProperty.call(patch, 'timeZone') &&

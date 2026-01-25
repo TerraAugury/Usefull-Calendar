@@ -143,7 +143,7 @@ export function reducer(state, action) {
     case 'SET_PREFERENCES':
       return {
         ...state,
-        preferences: { ...state.preferences, ...action.values, timeMode: 'timezone' },
+        preferences: { ...state.preferences, ...action.values },
       }
     case 'SET_PAX_STATE':
       return {

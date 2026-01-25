@@ -134,6 +134,7 @@ export default function AddScreen() {
         values={draftForValidation}
         errors={visibleErrors}
         categories={categories}
+        idPrefix="add"
         onChange={(values) => {
           if (
             Object.prototype.hasOwnProperty.call(values, 'timeZone') &&

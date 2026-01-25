@@ -72,4 +72,16 @@ describe('import/export', () => {
     expect(parsed.preferences.showPast).toBe(false)
     expect(parsed.preferences.calendarViewMode).toBe('agenda')
   })
+
+  it('accepts schemaVersion in imports', () => {
+    const base = {
+      categories: [{ id: 'cat-1', name: 'Work', color: 'indigo' }],
+      appointments: [],
+      preferences: { theme: 'system' },
+    }
+    const parsedWithout = parseImport(JSON.stringify(base))
+    const parsedWith = parseImport(JSON.stringify({ ...base, schemaVersion: 1 }))
+    expect(parsedWithout).not.toBeNull()
+    expect(parsedWith).not.toBeNull()
+  })
 })

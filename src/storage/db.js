@@ -231,6 +231,16 @@ export function setPaxState(key, value) {
   )
 }
 
+export function setPaxBatch(values) {
+  return withTx([STORE_NAMES.pax], 'readwrite', (tx) => {
+    const store = tx.objectStore(STORE_NAMES.pax)
+    const writes = Object.entries(values).map(([key, value]) =>
+      reqToPromise(store.put({ key, value })),
+    )
+    return Promise.all(writes)
+  })
+}
+
 export function getPaxState(key) {
   return withTx([STORE_NAMES.pax], 'readonly', (tx) =>
     reqToPromise(tx.objectStore(STORE_NAMES.pax).get(key)),

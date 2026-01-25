@@ -15,19 +15,20 @@ import { buildUtcFields } from '../utils/dates'
 import { DEFAULT_PAX_STATE, normalizePaxState } from '../utils/pax'
 import { getDeviceTimeZone } from '../utils/timezone'
 import {
-  clearAppointments,
-  clearCategories,
   clearPax,
-  clearPreferences,
   getAllAppointments,
   getAllCategories,
   getAppointmentsByStartUtcMsRange,
   getAllPaxState,
   getAllPreferences,
+  reqToPromise,
+  setPaxBatch,
   setPaxState,
   setPreferencesBatch,
+  STORE_NAMES,
   upsertAppointmentsBatch,
   upsertCategoriesBatch,
+  withTx,
 } from './db'
 
 const THEMES = ['system', 'light', 'dark']
@@ -257,11 +258,7 @@ export async function saveStoredData({
     writes.push(setPreferencesBatch(preferences))
   }
   if (pax && typeof pax === 'object') {
-    writes.push(
-      Promise.all(
-        Object.entries(pax).map(([key, value]) => setPaxState(key, value)),
-      ),
-    )
+    writes.push(setPaxBatch(pax))
   }
   await Promise.all(writes)
 }
@@ -277,6 +274,7 @@ export async function buildExport() {
   const normalizedPax = normalizePaxState(pax ?? DEFAULT_PAX_STATE)
   return JSON.stringify(
     {
+      schemaVersion: 1,
       categories,
       appointments,
       preferences: normalizedPreferences,
@@ -337,22 +335,42 @@ export function parseImport(text) {
 export async function applyImport(currentState, text) {
   const parsed = parseImport(text)
   if (!parsed) return currentState
-  await Promise.all([
-    clearCategories(),
-    clearAppointments(),
-    clearPreferences(),
-    clearPax(),
-  ])
-  await Promise.all([
-    upsertCategoriesBatch(parsed.categories),
-    upsertAppointmentsBatch(parsed.appointments),
-    setPreferencesBatch(parsed.preferences),
-    Promise.all(
-      Object.entries(parsed.pax ?? DEFAULT_PAX_STATE).map(([key, value]) =>
-        setPaxState(key, value),
-      ),
-    ),
-  ])
+  await withTx(
+    [
+      STORE_NAMES.appointments,
+      STORE_NAMES.categories,
+      STORE_NAMES.preferences,
+      STORE_NAMES.pax,
+    ],
+    'readwrite',
+    (tx) => {
+      const appointmentsStore = tx.objectStore(STORE_NAMES.appointments)
+      const categoriesStore = tx.objectStore(STORE_NAMES.categories)
+      const preferencesStore = tx.objectStore(STORE_NAMES.preferences)
+      const paxStore = tx.objectStore(STORE_NAMES.pax)
+      const writes = [
+        reqToPromise(appointmentsStore.clear()),
+        reqToPromise(categoriesStore.clear()),
+        reqToPromise(preferencesStore.clear()),
+        reqToPromise(paxStore.clear()),
+      ]
+
+      parsed.categories.forEach((category) => {
+        writes.push(reqToPromise(categoriesStore.put(category)))
+      })
+      parsed.appointments.forEach((appointment) => {
+        writes.push(reqToPromise(appointmentsStore.put(appointment)))
+      })
+      Object.entries(parsed.preferences).forEach(([key, value]) => {
+        writes.push(reqToPromise(preferencesStore.put({ key, value })))
+      })
+      Object.entries(parsed.pax ?? DEFAULT_PAX_STATE).forEach(([key, value]) => {
+        writes.push(reqToPromise(paxStore.put({ key, value })))
+      })
+
+      return Promise.all(writes)
+    },
+  )
   if (!currentState) return parsed
   return {
     ...currentState,

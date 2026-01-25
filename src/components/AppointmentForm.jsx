@@ -6,6 +6,7 @@ export default function AppointmentForm({
   onSubmit,
   submitLabel,
   submitDisabled = false,
+  idPrefix = 'apt',
   showTimeZone = false,
   showTimeZonePicker = false,
   timeZones = [],
@@ -30,11 +31,11 @@ export default function AppointmentForm({
   return (
     <form className="form" id={formId} onSubmit={handleSubmit}>
       <div className="form-field">
-        <label className="form-label" htmlFor="title">
+        <label className="form-label" htmlFor={`${idPrefix}-title`}>
           Title
         </label>
         <input
-          id="title"
+          id={`${idPrefix}-title`}
           type="text"
           value={values.title}
           onChange={(event) => onChange({ title: event.target.value })}
@@ -45,11 +46,11 @@ export default function AppointmentForm({
 
       <div className="form-row">
         <div className="form-field">
-          <label className="form-label" htmlFor="date">
+          <label className="form-label" htmlFor={`${idPrefix}-date`}>
             Date
           </label>
           <input
-            id="date"
+            id={`${idPrefix}-date`}
             type="date"
             value={values.date}
             onChange={(event) => onChange({ date: event.target.value })}
@@ -61,11 +62,11 @@ export default function AppointmentForm({
           ) : null}
         </div>
         <div className="form-field">
-          <label className="form-label" htmlFor="category">
+          <label className="form-label" htmlFor={`${idPrefix}-category`}>
             Category
           </label>
           <select
-            id="category"
+            id={`${idPrefix}-category`}
             value={values.categoryId}
             onChange={(event) => onChange({ categoryId: event.target.value })}
           >
@@ -84,11 +85,11 @@ export default function AppointmentForm({
 
       <div className="form-row">
         <div className="form-field">
-          <label className="form-label" htmlFor="startTime">
+          <label className="form-label" htmlFor={`${idPrefix}-startTime`}>
             Start time
           </label>
           <input
-            id="startTime"
+            id={`${idPrefix}-startTime`}
             type="time"
             value={values.startTime}
             onChange={(event) => onChange({ startTime: event.target.value })}
@@ -103,11 +104,11 @@ export default function AppointmentForm({
           ) : null}
         </div>
         <div className="form-field">
-          <label className="form-label" htmlFor="endTime">
+          <label className="form-label" htmlFor={`${idPrefix}-endTime`}>
             End time
           </label>
           <input
-            id="endTime"
+            id={`${idPrefix}-endTime`}
             type="time"
             value={values.endTime}
             onChange={(event) => onChange({ endTime: event.target.value })}
@@ -123,7 +124,7 @@ export default function AppointmentForm({
       {showTimeZone ? (
         <div className="form-field">
           {showTimeZonePicker ? (
-            <label className="form-label" htmlFor="timeZone">
+            <label className="form-label" htmlFor={`${idPrefix}-timeZone`}>
               Timezone
             </label>
           ) : (
@@ -132,7 +133,7 @@ export default function AppointmentForm({
           {showTimeZonePicker ? (
             <>
               <select
-                id="timeZone"
+                id={`${idPrefix}-timeZone`}
                 value={values.timeZone}
                 onChange={(event) =>
                   onChange({
@@ -177,11 +178,11 @@ export default function AppointmentForm({
       ) : null}
 
       <div className="form-field">
-        <label className="form-label" htmlFor="location">
+        <label className="form-label" htmlFor={`${idPrefix}-location`}>
           Location
         </label>
         <input
-          id="location"
+          id={`${idPrefix}-location`}
           type="text"
           value={values.location}
           onChange={(event) => onChange({ location: event.target.value })}
@@ -190,11 +191,11 @@ export default function AppointmentForm({
       </div>
 
       <div className="form-field">
-        <label className="form-label" htmlFor="notes">
+        <label className="form-label" htmlFor={`${idPrefix}-notes`}>
           Notes
         </label>
         <textarea
-          id="notes"
+          id={`${idPrefix}-notes`}
           value={values.notes}
           onChange={(event) => onChange({ notes: event.target.value })}
           placeholder="Extra details"

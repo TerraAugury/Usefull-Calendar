@@ -57,7 +57,7 @@ test('add flow: new appointment returns to calendar and appears upcoming', async
   await initApp(page, { seedData })
 
   await page.getByRole('button', { name: 'Add appointment' }).click()
-  const timeZoneSelect = page.locator('select#timeZone')
+  const timeZoneSelect = page.locator('select#add-timeZone')
   if ((await timeZoneSelect.count()) > 0) {
     await timeZoneSelect.selectOption('Europe/London')
   }
@@ -77,7 +77,7 @@ test('no-past enforcement blocks saving', async ({ page }) => {
   await initApp(page)
 
   await page.getByRole('button', { name: 'Add appointment' }).click()
-  const timeZoneSelect = page.locator('select#timeZone')
+  const timeZoneSelect = page.locator('select#add-timeZone')
   if ((await timeZoneSelect.count()) > 0) {
     await timeZoneSelect.selectOption('Europe/London')
   }
@@ -94,7 +94,7 @@ test('date and time inputs enforce min values', async ({ page }) => {
   await initApp(page)
 
   await page.getByRole('button', { name: 'Add appointment' }).click()
-  const timeZoneSelect = page.locator('select#timeZone')
+  const timeZoneSelect = page.locator('select#add-timeZone')
   if ((await timeZoneSelect.count()) > 0) {
     await timeZoneSelect.selectOption('Europe/London')
   }
@@ -229,7 +229,7 @@ test('timezone mode: create appointment with Europe/Paris', async ({ page }) => 
   await page.getByRole('button', { name: 'Add appointment' }).click()
   await page.getByLabel('Title').fill('Paris briefing')
   await page.getByLabel('Date').fill('2026-01-10')
-  const timeZoneSelect = page.locator('select#timeZone')
+  const timeZoneSelect = page.locator('select#add-timeZone')
   if ((await timeZoneSelect.count()) === 0) {
     await page.getByRole('button', { name: 'Change' }).click()
   }

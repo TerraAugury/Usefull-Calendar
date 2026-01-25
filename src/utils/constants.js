@@ -53,6 +53,10 @@ export const TIMEZONE_OPTIONS = [
   { value: 'Europe/Istanbul', label: 'Europe/Istanbul' },
 ]
 
+export const TIMEZONE_VALUE_SET = new Set(
+  TIMEZONE_OPTIONS.map((zone) => zone.value),
+)
+
 export const DEFAULT_TIME_ZONE = 'Europe/London'
 export const TIMEZONE_SOURCES = ['inferred', 'manual', 'deviceFallback']
 

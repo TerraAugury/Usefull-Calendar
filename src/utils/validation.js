@@ -3,6 +3,7 @@ import {
   STATUS_OPTIONS,
   TIMEZONE_SOURCES,
   TIMEZONE_OPTIONS,
+  TIMEZONE_VALUE_SET,
   TIME_MODES,
 } from './constants'
 import { buildUtcFields, timeStringToMinutes } from './dates'
@@ -32,7 +33,7 @@ export function isValidTimeMode(value) {
 }
 
 export function isValidTimeZone(value) {
-  return TIMEZONE_OPTIONS.some((zone) => zone.value === value)
+  return TIMEZONE_VALUE_SET.has(value)
 }
 
 export function isValidTimeZoneSource(value) {

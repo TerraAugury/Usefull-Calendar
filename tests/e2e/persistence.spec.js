@@ -89,7 +89,7 @@ test('persistence: add waits for hydration and survives reload', async ({ page }
   await expect(addTab).toBeEnabled()
 
   await addTab.click()
-  const timeZoneSelect = page.locator('select#timeZone')
+  const timeZoneSelect = page.locator('select#add-timeZone')
   if ((await timeZoneSelect.count()) > 0) {
     await timeZoneSelect.selectOption('Europe/London')
   }
