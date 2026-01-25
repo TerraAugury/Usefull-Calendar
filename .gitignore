@@ -144,3 +144,4 @@ test-results/
 
 # Local docs (not committed)
 GITHUB_PAGES_BUILD.local.md
+*.zip
