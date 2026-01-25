@@ -73,3 +73,37 @@ test('persistence: trip import pax selection survives reload', async ({ page }) 
   await expect(drawerAfterReload).toBeVisible()
   await expect(drawerAfterReload.getByLabel('Passenger')).toHaveValue('Alex Smith')
 })
+
+test('persistence: add waits for hydration and survives reload', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__APP_HYDRATION_DELAY_MS__ = 2000
+  })
+  await initApp(page)
+
+  await expect(page.getByText('Loading appointments...')).toBeVisible()
+  const addTab = page.getByRole('button', { name: 'Add appointment' })
+  await expect(addTab).toBeDisabled()
+
+  await page.waitForFunction(() => window.__APP_READY__ === true)
+  await expect(addTab).toBeEnabled()
+
+  await addTab.click()
+  const timeZoneSelect = page.locator('select#timeZone')
+  if ((await timeZoneSelect.count()) > 0) {
+    await timeZoneSelect.selectOption('Europe/London')
+  }
+  await page.getByLabel('Title').fill('Hydration hold')
+  await page.getByLabel('Date').fill('2026-01-10')
+  await page.getByLabel('Start time').fill('12:00')
+  await page.getByLabel('End time').fill('12:30')
+
+  const saveButton = page.getByRole('button', { name: /save appointment/i })
+  await expect(saveButton).toBeEnabled()
+  await saveButton.click()
+  await expect(page.getByRole('heading', { name: 'Calendar' })).toBeVisible()
+  await expect(page.getByText('Hydration hold')).toBeVisible()
+
+  await page.reload()
+  await page.waitForFunction(() => window.__APP_READY__ === true)
+  await expect(page.getByText('Hydration hold')).toBeVisible()
+})

@@ -8,7 +8,7 @@ const tabs = [
   { id: 'settings', label: 'Settings', icon: IconSettings },
 ]
 
-export default function BottomTabs() {
+export default function BottomTabs({ disabled = false }) {
   const { ui } = useAppState()
   const dispatch = useAppDispatch()
 
@@ -21,10 +21,15 @@ export default function BottomTabs() {
           <button
             key={tab.id}
             className={`tab-item${isActive ? ' active' : ''}${tab.isAdd ? ' tab-add' : ''}`}
-            onClick={() => dispatch({ type: 'SET_TAB', tab: tab.id })}
+            onClick={() => {
+              if (disabled) return
+              dispatch({ type: 'SET_TAB', tab: tab.id })
+            }}
             type="button"
             aria-label={tab.aria ?? tab.label}
             aria-current={isActive ? 'page' : undefined}
+            aria-disabled={disabled ? 'true' : undefined}
+            disabled={disabled}
           >
             <Icon className="tab-icon" />
             <span className="tab-label">{tab.label}</span>

@@ -23,6 +23,12 @@ html[data-visual-test='1'] .app-main {
   gap: var(--space-4);
 }
 
+.app-loading {
+  min-height: 60vh;
+  align-items: center;
+  justify-content: center;
+}
+
 .screen-header {
   position: sticky;
   top: 0;
@@ -94,6 +100,11 @@ html[data-visual-test='1'] .app-main {
   color: var(--text-2);
   gap: 2px;
   padding: 4px 0 6px;
+}
+
+.tab-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .tab-item.active {

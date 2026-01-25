@@ -20,7 +20,21 @@ export function AppStateProvider({ children, initialState }) {
 
   useEffect(() => {
     let active = true
-    loadStoredData()
+    let delayTimer
+    const delayMs =
+      typeof window !== 'undefined' &&
+      Number.isFinite(window.__APP_HYDRATION_DELAY_MS__)
+        ? window.__APP_HYDRATION_DELAY_MS__
+        : 0
+    // Allow tests to simulate slow hydration.
+    const waitForDelay =
+      delayMs > 0
+        ? new Promise((resolve) => {
+            delayTimer = setTimeout(resolve, delayMs)
+          })
+        : Promise.resolve()
+    waitForDelay
+      .then(() => loadStoredData())
       .then((stored) => {
         if (!active || !stored) return
         dispatch({ type: 'HYDRATE_STATE', values: stored })
@@ -30,6 +44,9 @@ export function AppStateProvider({ children, initialState }) {
       })
     return () => {
       active = false
+      if (delayTimer) {
+        clearTimeout(delayTimer)
+      }
     }
   }, [dispatch])
 
@@ -40,7 +57,11 @@ export function AppStateProvider({ children, initialState }) {
       appointments: state.appointments,
       preferences: state.preferences,
       pax: state.pax,
-    }).catch(() => {})
+    }).catch((error) => {
+      if (import.meta.env.DEV) {
+        console.error('Failed to persist app data.', error)
+      }
+    })
   }, [isHydrated, state.categories, state.appointments, state.preferences, state.pax])
 
   const contextValue = useMemo(

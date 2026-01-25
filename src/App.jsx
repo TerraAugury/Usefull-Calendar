@@ -41,13 +41,28 @@ export function AppShell() {
 
   return (
     <div className="app">
-      <main className="app-main" data-hydrated={isHydrated ? 'true' : 'false'}>
-        {ui.tab === 'calendar' ? <CalendarScreen /> : null}
-        {ui.tab === 'add' ? <AddScreen /> : null}
-        {ui.tab === 'categories' ? <CategoriesScreen /> : null}
-        {ui.tab === 'settings' ? <SettingsScreen /> : null}
+      <main
+        className="app-main"
+        data-hydrated={isHydrated ? 'true' : 'false'}
+        aria-busy={!isHydrated}
+      >
+        {!isHydrated ? (
+          <section className="screen app-loading" role="status" aria-live="polite">
+            <div className="empty-state">
+              <h1 className="screen-title">Loading appointments...</h1>
+              <p className="helper-text">Syncing saved data.</p>
+            </div>
+          </section>
+        ) : (
+          <>
+            {ui.tab === 'calendar' ? <CalendarScreen /> : null}
+            {ui.tab === 'add' ? <AddScreen /> : null}
+            {ui.tab === 'categories' ? <CategoriesScreen /> : null}
+            {ui.tab === 'settings' ? <SettingsScreen /> : null}
+          </>
+        )}
       </main>
-      <BottomTabs />
+      <BottomTabs disabled={!isHydrated} />
       <Toast />
     </div>
   )

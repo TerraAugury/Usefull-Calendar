@@ -16,7 +16,7 @@ import { DEFAULT_PAX_STATE } from '../utils/pax'
 import { resolveTimeZoneState } from '../utils/timezone'
 
 export default function AddScreen() {
-  const { ui, categories, preferences, pax } = useAppState()
+  const { ui, categories, preferences, pax, isHydrated } = useAppState()
   const dispatch = useAppDispatch()
   const [errors, setErrors] = useState({})
   const [forceTimeZonePicker, setForceTimeZonePicker] = useState(false)
@@ -66,7 +66,8 @@ export default function AddScreen() {
   }
   const startInPast = isAppointmentStartInPast(draftForValidation, now, timeMode)
   const missingTimeZone = timeMode === 'timezone' && !timeZone
-  const submitBlocked = startInPast || dateBeforeMin || missingTimeZone
+  const submitBlocked =
+    startInPast || dateBeforeMin || missingTimeZone || !isHydrated
   const visibleErrors = { ...errors }
   if (startInPast && !visibleErrors.startTime) {
     visibleErrors.startTime = 'Appointments cannot be in the past.'
@@ -88,6 +89,7 @@ export default function AddScreen() {
   }, [ui.addDraft.startTime, ui.addDraft.endTime, dispatch])
 
   const handleSubmit = () => {
+    if (!isHydrated) return
     const nextErrors = validateAppointmentInput(
       draftForValidation,
       categories,
