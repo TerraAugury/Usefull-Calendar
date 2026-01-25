@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { reducer, createInitialState } from './reducer'
 import { AppDispatchContext, AppStateContext } from './context'
 import { DEFAULT_PAX_STATE } from '../utils/pax'
@@ -6,6 +6,7 @@ import { loadStoredData, saveStoredData } from '../storage/storage'
 
 export function AppStateProvider({ children, initialState }) {
   const [isHydrated, setIsHydrated] = useState(false)
+  const hasStorageWarningRef = useRef(false)
   const [state, dispatch] = useReducer(
     reducer,
     initialState,
@@ -58,6 +59,13 @@ export function AppStateProvider({ children, initialState }) {
       preferences: state.preferences,
       pax: state.pax,
     }).catch((error) => {
+      if (!hasStorageWarningRef.current) {
+        hasStorageWarningRef.current = true
+        dispatch({
+          type: 'SET_TOAST',
+          message: 'Storage unavailable - data may not persist after closing.',
+        })
+      }
       if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
         console.error('Failed to persist app data.', error)
       }
