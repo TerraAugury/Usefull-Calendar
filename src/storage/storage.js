@@ -21,6 +21,7 @@ import {
   getAppointmentsByStartUtcMsRange,
   getAllPaxState,
   getAllPreferences,
+  openDb,
   reqToPromise,
   setPaxBatch,
   setPaxState,
@@ -283,6 +284,29 @@ export async function buildExport() {
     null,
     2,
   )
+}
+
+export async function checkStorageStatus() {
+  try {
+    if (typeof indexedDB === 'undefined') {
+      return { status: 'limited' }
+    }
+    if (
+      typeof navigator !== 'undefined' &&
+      navigator.storage &&
+      typeof navigator.storage.persisted === 'function'
+    ) {
+      const persisted = await navigator.storage.persisted()
+      if (persisted === false) {
+        return { status: 'limited' }
+      }
+    }
+    const db = await openDb()
+    db.close()
+    return { status: 'ok' }
+  } catch {
+    return { status: 'limited' }
+  }
 }
 
 export async function loadAppointmentsForDateRange(startMs, endMs) {

@@ -1,8 +1,8 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import ConfirmDialog from '../components/ConfirmDialog'
 import { useAppDispatch, useAppState } from '../state/hooks'
-import { buildExport, parseImport } from '../storage/storage'
+import { buildExport, checkStorageStatus, parseImport } from '../storage/storage'
 import { getDefaultCategories, getSampleAppointments } from '../data/sampleData'
 import { DEFAULT_PAX_STATE } from '../utils/pax'
 import {
@@ -31,8 +31,21 @@ export default function SettingsScreen() {
   const [pendingPaxNames, setPendingPaxNames] = useState([])
   const [selectPaxOpen, setSelectPaxOpen] = useState(false)
   const importInputRef = useRef(null)
+  const [storageStatus, setStorageStatus] = useState('checking')
 
   const paxState = pax ?? DEFAULT_PAX_STATE
+
+  useEffect(() => {
+    let active = true
+    checkStorageStatus().then((result) => {
+      if (active) {
+        setStorageStatus(result.status)
+      }
+    })
+    return () => {
+      active = false
+    }
+  }, [])
 
   const ensureFlightsCategory = (current) => {
     const existing = current.find(
@@ -278,6 +291,19 @@ export default function SettingsScreen() {
           <option value="light">Light</option>
           <option value="dark">Dark</option>
         </select>
+      </div>
+
+      <div className="form-field">
+        <div className="detail-row">
+          <span className="detail-label">Storage status</span>
+          <span>
+            {storageStatus === 'checking'
+              ? 'Checking...'
+              : storageStatus === 'ok'
+                ? 'OK'
+                : 'Limited'}
+          </span>
+        </div>
       </div>
 
       <div className="form-field">
