@@ -58,7 +58,7 @@ export function AppStateProvider({ children, initialState }) {
       preferences: state.preferences,
       pax: state.pax,
     }).catch((error) => {
-      if (import.meta.env.DEV) {
+      if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
         console.error('Failed to persist app data.', error)
       }
     })
