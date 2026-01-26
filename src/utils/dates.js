@@ -153,6 +153,22 @@ function formatDateKey(year, month, day) {
   return `${yyyy}-${mm}-${dd}`
 }
 
+function addDaysToDateKey(dateStr, days = 1) {
+  if (!dateStr) return ''
+  const [year, month, day] = dateStr.split('-').map(Number)
+  if (
+    Number.isNaN(year) ||
+    Number.isNaN(month) ||
+    Number.isNaN(day) ||
+    !Number.isFinite(days)
+  ) {
+    return ''
+  }
+  const next = new Date(Date.UTC(year, month - 1, day + days))
+  if (Number.isNaN(next.getTime())) return ''
+  return formatDateKey(next.getUTCFullYear(), next.getUTCMonth() + 1, next.getUTCDate())
+}
+
 function getOffsetMs(utcMs, timeZone) {
   const formatter = getDateTimeFormatter(timeZone)
   const parts = getPartsMap(formatter, new Date(utcMs))
@@ -226,6 +242,21 @@ export function buildUtcFields({ date, startTime, endTime, timeMode, timeZone })
     } else {
       const end = getLocalDateTime(date, endTime)
       endUtcMs = end ? end.getTime() : null
+    }
+    if (Number.isFinite(endUtcMs) && endUtcMs < startUtcMs) {
+      const nextDate = addDaysToDateKey(date, 1)
+      if (nextDate) {
+        if (timeMode === 'timezone') {
+          endUtcMs = zonedDateTimeToUtcMs({
+            dateStr: nextDate,
+            timeStr: endTime,
+            timeZone,
+          })
+        } else {
+          const end = getLocalDateTime(nextDate, endTime)
+          endUtcMs = end ? end.getTime() : null
+        }
+      }
     }
   }
   return { startUtcMs, endUtcMs }
