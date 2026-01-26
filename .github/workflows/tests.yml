@@ -22,10 +22,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
-      - run: npm run test -- --run
+      - run: npm run test:run
       - run: npm run build
-      - run: sudo rm -f /etc/apt/sources.list.d/azure-cli.list /etc/apt/sources.list.d/microsoft-prod.list || true
-      - run: sudo apt-get update
       - run: npx playwright install chromium
       - run: npm run test:e2e
       - name: Upload Playwright artifacts
@@ -48,8 +46,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - run: sudo rm -f /etc/apt/sources.list.d/azure-cli.list /etc/apt/sources.list.d/microsoft-prod.list || true
-      - run: sudo apt-get update
       - run: npx playwright install chromium
       - run: npx playwright test -c playwright.preview.config.js tests/e2e/smoke-preview.spec.js
       - name: Upload Playwright artifacts
@@ -72,8 +68,6 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: sudo rm -f /etc/apt/sources.list.d/azure-cli.list /etc/apt/sources.list.d/microsoft-prod.list || true
-      - run: sudo apt-get update
       - run: npx playwright install chromium
       - name: Run visual snapshots
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.update_snapshots == false }}

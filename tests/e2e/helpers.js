@@ -1,6 +1,8 @@
 import { getDefaultCategories, getSampleAppointments } from '../../src/data/sampleData.js'
 
 export const FIXED_NOW_ISO = '2026-01-10T10:00:00.000Z'
+const DB_NAME = 'CalendarDB'
+const STORES = ['appointments', 'categories', 'preferences', 'pax']
 
 export function buildSeedData({
   nowIso = FIXED_NOW_ISO,
@@ -39,32 +41,38 @@ export async function freezeTime(page, nowIso = FIXED_NOW_ISO) {
 }
 
 export async function seedStorage(page, data) {
+  // Schema here must match src/storage/dexieDb.js (store names + indexes). Update together when schema changes.
   await page.evaluate(async (payload) => {
+    const { dbName, stores } = payload
+    const [appointmentsStoreName, categoriesStoreName, preferencesStoreName, paxStoreName] =
+      stores
     await new Promise((resolve) => {
-      const request = indexedDB.deleteDatabase('CalendarDB')
+      const request = indexedDB.deleteDatabase(dbName)
       request.onsuccess = () => resolve()
       request.onerror = () => resolve()
       request.onblocked = () => resolve()
     })
     const openDb = () =>
       new Promise((resolve, reject) => {
-        const request = indexedDB.open('CalendarDB', 1)
+        const request = indexedDB.open(dbName, 1)
         request.onupgradeneeded = () => {
           const db = request.result
-          if (!db.objectStoreNames.contains('appointments')) {
-            const store = db.createObjectStore('appointments', { keyPath: 'id' })
+          if (!db.objectStoreNames.contains(appointmentsStoreName)) {
+            const store = db.createObjectStore(appointmentsStoreName, {
+              keyPath: 'id',
+            })
             store.createIndex('startUtcMs', 'startUtcMs', { unique: false })
             store.createIndex('date', 'date', { unique: false })
             store.createIndex('categoryId', 'categoryId', { unique: false })
           }
-          if (!db.objectStoreNames.contains('categories')) {
-            db.createObjectStore('categories', { keyPath: 'id' })
+          if (!db.objectStoreNames.contains(categoriesStoreName)) {
+            db.createObjectStore(categoriesStoreName, { keyPath: 'id' })
           }
-          if (!db.objectStoreNames.contains('preferences')) {
-            db.createObjectStore('preferences', { keyPath: 'key' })
+          if (!db.objectStoreNames.contains(preferencesStoreName)) {
+            db.createObjectStore(preferencesStoreName, { keyPath: 'key' })
           }
-          if (!db.objectStoreNames.contains('pax')) {
-            db.createObjectStore('pax', { keyPath: 'key' })
+          if (!db.objectStoreNames.contains(paxStoreName)) {
+            db.createObjectStore(paxStoreName, { keyPath: 'key' })
           }
         }
         request.onsuccess = () => resolve(request.result)
@@ -74,13 +82,13 @@ export async function seedStorage(page, data) {
     const db = await openDb()
     await new Promise((resolve, reject) => {
       const tx = db.transaction(
-        ['appointments', 'categories', 'preferences', 'pax'],
+        stores,
         'readwrite',
       )
-      const appointmentsStore = tx.objectStore('appointments')
-      const categoriesStore = tx.objectStore('categories')
-      const preferencesStore = tx.objectStore('preferences')
-      const paxStore = tx.objectStore('pax')
+      const appointmentsStore = tx.objectStore(appointmentsStoreName)
+      const categoriesStore = tx.objectStore(categoriesStoreName)
+      const preferencesStore = tx.objectStore(preferencesStoreName)
+      const paxStore = tx.objectStore(paxStoreName)
 
       appointmentsStore.clear()
       categoriesStore.clear()
@@ -104,6 +112,8 @@ export async function seedStorage(page, data) {
     })
     db.close()
   }, {
+    dbName: DB_NAME,
+    stores: STORES,
     categories: data.categories ?? [],
     appointments: data.appointments ?? [],
     preferences: data.preferences ?? {},
@@ -113,13 +123,14 @@ export async function seedStorage(page, data) {
 
 export async function clearStorage(page) {
   await page.evaluate(
-    () =>
+    (dbName) =>
       new Promise((resolve) => {
-        const request = indexedDB.deleteDatabase('CalendarDB')
+        const request = indexedDB.deleteDatabase(dbName)
         request.onsuccess = () => resolve()
         request.onerror = () => resolve()
         request.onblocked = () => resolve()
       }),
+    DB_NAME,
   )
 }
 

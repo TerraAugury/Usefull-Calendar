@@ -76,15 +76,21 @@ const FALLBACK_KEY = 'useful_calendar_fallback_v1'
 
 function withTimeout(promise, ms) {
   if (!ms || ms <= 0) return promise
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => {
-      const timer = setTimeout(() => {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error('Storage timeout'))
+    }, ms)
+    promise.then(
+      (value) => {
         clearTimeout(timer)
-        reject(new Error('Storage timeout'))
-      }, ms)
-    }),
-  ])
+        resolve(value)
+      },
+      (error) => {
+        clearTimeout(timer)
+        reject(error)
+      },
+    )
+  })
 }
 
 function safeParse(value) {

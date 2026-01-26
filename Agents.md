@@ -76,6 +76,19 @@ Use simple localStorage keys (no version suffixes):
 
 No migration logic required.
 
+## Storage
+- Local persistence uses Dexie (IndexedDB wrapper).
+- DB name is `CalendarDB` (must not change).
+- Dexie singleton lives in `src/storage/dexieDb.js`.
+- Dexie-backed storage API lives in `src/storage/db.js`.
+- Orchestration (load/save/import/export + fallback) is in `src/storage/storage.js`.
+- Store/table names are stable: `appointments`, `categories`, `preferences`, `pax`.
+- Appointment indexes used: `startUtcMs`, `date`, `categoryId` (do not remove).
+
+### Testing note
+- Unit tests reset using `db.delete()`.
+- E2E tests seed IndexedDB and rely on those store names.
+
 ## Styling
 - Implement `VisualSpec.md` via global CSS variables (light/dark via `prefers-color-scheme`).
 - Appointment category coloring:
