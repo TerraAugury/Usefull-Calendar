@@ -14,6 +14,7 @@ import {
 import { buildUtcFields } from '../utils/dates'
 import { DEFAULT_PAX_STATE, normalizePaxState } from '../utils/pax'
 import { getDeviceTimeZone } from '../utils/timezone'
+import { db } from './dexieDb'
 import {
   clearPax,
   getAllAppointments,
@@ -21,7 +22,6 @@ import {
   getAppointmentsByStartUtcMsRange,
   getAllPaxState,
   getAllPreferences,
-  openDb,
   reqToPromise,
   setPaxBatch,
   setPaxState,
@@ -33,6 +33,7 @@ import {
 } from './db'
 
 const THEMES = ['system', 'light', 'dark']
+const FALLBACK_KEY = 'useful_calendar_fallback_v1'
 
 function safeParse(value) {
   if (!value) return null
@@ -40,6 +41,30 @@ function safeParse(value) {
     return JSON.parse(value)
   } catch {
     return null
+  }
+}
+
+function loadFallback() {
+  try {
+    const storage =
+      typeof globalThis !== 'undefined' ? globalThis.localStorage : null
+    if (!storage) return null
+    const raw = storage.getItem(FALLBACK_KEY)
+    const parsed = safeParse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+function saveFallback(data) {
+  try {
+    const storage =
+      typeof globalThis !== 'undefined' ? globalThis.localStorage : null
+    if (!storage) return
+    storage.setItem(FALLBACK_KEY, JSON.stringify(data))
+  } catch {
+    // Ignore fallback persistence errors.
   }
 }
 
@@ -167,6 +192,7 @@ export async function loadStoredData() {
   let rawAppointments = null
   let rawPreferences = null
   let rawPax = null
+  let dexieFailed = false
 
   try {
     const [categories, appointments, preferences, pax] = await Promise.all([
@@ -181,7 +207,21 @@ export async function loadStoredData() {
       preferences && Object.keys(preferences).length ? preferences : null
     rawPax = pax && Object.keys(pax).length ? pax : null
   } catch {
-    return empty
+    dexieFailed = true
+  }
+
+  const noCategories = !rawCategories || rawCategories.length === 0
+  const noAppointments = !rawAppointments || rawAppointments.length === 0
+  if (dexieFailed || (noCategories && noAppointments)) {
+    const fallback = loadFallback()
+    if (fallback) {
+      rawCategories = fallback.categories ?? null
+      rawAppointments = fallback.appointments ?? null
+      rawPreferences = fallback.preferences ?? null
+      rawPax = fallback.pax ?? null
+    } else if (dexieFailed) {
+      return empty
+    }
   }
 
   const normalized = normalizeCategories(rawCategories)
@@ -210,22 +250,24 @@ export async function loadStoredData() {
       ? normalizedAppointments.appointments
       : null
 
-  if (categories && normalized?.changed) {
-    await upsertCategoriesBatch(categories)
-  }
-  if (appointments && normalizedAppointments?.changed) {
-    await upsertAppointmentsBatch(appointments)
-  }
-  if (
-    rawPreferences &&
-    preferences &&
-    JSON.stringify(preferences) !== JSON.stringify(rawPreferences)
-  ) {
-    await setPreferencesBatch(preferences)
+  if (!dexieFailed) {
+    if (categories && normalized?.changed) {
+      await upsertCategoriesBatch(categories)
+    }
+    if (appointments && normalizedAppointments?.changed) {
+      await upsertAppointmentsBatch(appointments)
+    }
+    if (
+      rawPreferences &&
+      preferences &&
+      JSON.stringify(preferences) !== JSON.stringify(rawPreferences)
+    ) {
+      await setPreferencesBatch(preferences)
+    }
   }
 
   const paxNormalized = normalizePaxState(rawPax ?? DEFAULT_PAX_STATE)
-  if (rawPax && paxNormalized.changed) {
+  if (!dexieFailed && rawPax && paxNormalized.changed) {
     await clearPax()
     await Promise.all(
       Object.entries(paxNormalized.state).map(([key, value]) =>
@@ -261,7 +303,11 @@ export async function saveStoredData({
   if (pax && typeof pax === 'object') {
     writes.push(setPaxBatch(pax))
   }
-  await Promise.all(writes)
+  try {
+    await Promise.all(writes)
+  } finally {
+    saveFallback({ categories, appointments, preferences, pax })
+  }
 }
 
 export async function buildExport() {
@@ -288,21 +334,12 @@ export async function buildExport() {
 
 export async function checkStorageStatus() {
   try {
-    if (typeof indexedDB === 'undefined') {
-      return { status: 'limited' }
-    }
-    if (
-      typeof navigator !== 'undefined' &&
-      navigator.storage &&
-      typeof navigator.storage.persisted === 'function'
-    ) {
-      const persisted = await navigator.storage.persisted()
-      if (persisted === false) {
-        return { status: 'limited' }
-      }
-    }
-    const db = await openDb()
-    db.close()
+    await db.open()
+    await db.table(STORE_NAMES.preferences).put({
+      key: '__storage_test__',
+      value: 1,
+    })
+    await db.table(STORE_NAMES.preferences).delete('__storage_test__')
     return { status: 'ok' }
   } catch {
     return { status: 'limited' }

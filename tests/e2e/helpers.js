@@ -40,6 +40,12 @@ export async function freezeTime(page, nowIso = FIXED_NOW_ISO) {
 
 export async function seedStorage(page, data) {
   await page.evaluate(async (payload) => {
+    await new Promise((resolve) => {
+      const request = indexedDB.deleteDatabase('CalendarDB')
+      request.onsuccess = () => resolve()
+      request.onerror = () => resolve()
+      request.onblocked = () => resolve()
+    })
     const openDb = () =>
       new Promise((resolve, reject) => {
         const request = indexedDB.open('CalendarDB', 1)

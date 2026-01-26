@@ -14,6 +14,7 @@ import {
   upsertAppointment,
   upsertAppointmentsBatch,
 } from '../storage/db'
+import { db } from '../storage/dexieDb'
 
 const hasIndexedDb = typeof indexedDB !== 'undefined'
 const describeDb = hasIndexedDb
@@ -21,12 +22,7 @@ const describeDb = hasIndexedDb
   : describe.skip
 
 async function deleteDb() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.deleteDatabase('CalendarDB')
-    request.onsuccess = () => resolve()
-    request.onerror = () => reject(request.error)
-    request.onblocked = () => resolve()
-  })
+  await db.delete()
 }
 
 describeDb(
