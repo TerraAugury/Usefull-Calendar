@@ -73,6 +73,30 @@ test('add flow: new appointment returns to calendar and appears upcoming', async
   await expect(firstCard).toContainText('Vendor call')
 })
 
+test('agenda menu toggles past appointments', async ({ page }) => {
+  const seedData = buildSeedData()
+  await initApp(page, { seedData })
+
+  const pastItem = page.locator('.appointment-card', { hasText: 'Budget review' })
+  await expect(pastItem).toHaveCount(0)
+
+  await page.getByLabel('More options').click()
+  const drawer = page.getByRole('dialog', { name: 'Filters' })
+  await expect(drawer).toBeVisible()
+  await drawer.getByRole('button', { name: 'Past' }).click()
+  await page.keyboard.press('Escape')
+
+  await expect(pastItem).toBeVisible()
+
+  await page.getByLabel('More options').click()
+  const drawerClose = page.getByRole('dialog', { name: 'Filters' })
+  await expect(drawerClose).toBeVisible()
+  await drawerClose.getByRole('button', { name: 'Past' }).click()
+  await page.keyboard.press('Escape')
+
+  await expect(pastItem).toHaveCount(0)
+})
+
 test('no-past enforcement blocks saving', async ({ page }) => {
   await initApp(page)
 

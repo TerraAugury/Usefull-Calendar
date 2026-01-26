@@ -100,14 +100,15 @@ export default function FilterDrawer({
               ) : null}
               {typeof onToggleShowPast === 'function' ? (
                 <div className="form-field">
-                  <span className="form-label">Past appointments</span>
+                  <span className="form-label">Past</span>
                   <button
                     className="btn btn-secondary"
                     type="button"
                     aria-pressed={showPast}
+                    aria-label="Past"
                     onClick={() => onToggleShowPast(!showPast)}
                   >
-                    {showPast ? 'Hide past appointments' : 'Show past appointments'}
+                    {showPast ? 'On' : 'Off'}
                   </button>
                 </div>
               ) : null}
