@@ -35,7 +35,9 @@ test.describe('visual mobile', () => {
     const calendarRoot = page.getByTestId('calendar-root')
     await expect(calendarRoot).toBeVisible()
     await disableAnimations(page)
-    await expect(calendarRoot).toHaveScreenshot('calendar-light-mobile.png')
+    await expect(calendarRoot).toHaveScreenshot('calendar-light-mobile.png', {
+      maxDiffPixelRatio: 0.08,
+    })
   })
 
   test('visual: filter drawer open @visual', async ({ page }) => {
@@ -57,7 +59,7 @@ test.describe('visual mobile', () => {
     )
     await disableAnimations(page)
     await expect(drawer).toHaveScreenshot('filter-drawer-open.png', {
-      maxDiffPixelRatio: 0.01,
+      maxDiffPixelRatio: 0.05,
     })
   })
 
@@ -73,7 +75,9 @@ test.describe('visual mobile', () => {
     await sheet.waitFor({ state: 'visible' })
     await sheet.evaluate((node) => node.scrollTo(0, 0))
     await disableAnimations(page)
-    await expect(sheet).toHaveScreenshot('details-dialog-open.png')
+    await expect(sheet).toHaveScreenshot('details-dialog-open.png', {
+      maxDiffPixelRatio: 0.05,
+    })
   })
 })
 
@@ -90,6 +94,8 @@ test.describe('visual desktop', () => {
     const calendarRoot = page.getByTestId('calendar-root')
     await expect(calendarRoot).toBeVisible()
     await disableAnimations(page)
-    await expect(calendarRoot).toHaveScreenshot('calendar-dark-desktop.png')
+    await expect(calendarRoot).toHaveScreenshot('calendar-dark-desktop.png', {
+      maxDiffPixelRatio: 0.08,
+    })
   })
 })

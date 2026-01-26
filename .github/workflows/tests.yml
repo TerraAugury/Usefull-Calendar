@@ -58,7 +58,7 @@ jobs:
             test-results
 
   visual:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: test
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     steps:
@@ -68,6 +68,9 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: sudo rm -f /etc/apt/sources.list.d/azure-cli.list /etc/apt/sources.list.d/microsoft-prod.list || true
+      - run: sudo apt-get update
+      - run: sudo apt-get install -y fonts-noto-color-emoji
       - run: npx playwright install chromium
       - name: Run visual snapshots
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.update_snapshots == false }}

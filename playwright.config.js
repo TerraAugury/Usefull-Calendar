@@ -2,6 +2,10 @@ process.env.TZ = 'Europe/Paris'
 
 import { defineConfig } from '@playwright/test'
 
+const SNAPSHOT_SUFFIX =
+  process.env.SNAPSHOT_SUFFIX ??
+  (process.platform === 'linux' ? 'linux' : process.platform)
+
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 30 * 1000,
@@ -16,7 +20,7 @@ export default defineConfig({
       name: 'visual',
       grep: /@visual/,
       snapshotPathTemplate:
-        '{testDir}/visual.spec.js-snapshots/{arg}-linux{ext}',
+        '{testDir}/visual.spec.js-snapshots/{arg}-' + SNAPSHOT_SUFFIX + '{ext}',
       use: {
         browserName: 'chromium',
         viewport: { width: 1280, height: 720 },
