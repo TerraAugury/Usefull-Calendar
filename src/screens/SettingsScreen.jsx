@@ -143,18 +143,23 @@ export default function SettingsScreen() {
       const text = await readFileAsText(importFile)
       const safeText = typeof text === 'string' ? text : ''
       const parsed = parseImport(safeText)
-      if (!parsed) {
-        if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
-          console.error('Import JSON invalid.', {
-            length: safeText.length,
-            preview: safeText.slice(0, 200),
+        if (!parsed) {
+          if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
+            console.error('Import JSON invalid.', {
+              length: safeText.length,
+              preview: safeText.slice(0, 200),
+            })
+          }
+          setImportError(
+            'Invalid calendar data file (failed validation). Nothing was imported.',
+          )
+          dispatch({
+            type: 'SET_TOAST',
+            message: 'Invalid calendar data file (failed validation).',
           })
+          resetImportSelection()
+          return
         }
-        setImportError('Invalid JSON file. Nothing was imported.')
-        dispatch({ type: 'SET_TOAST', message: 'Invalid JSON file.' })
-        resetImportSelection()
-        return
-      }
       setImportError('')
       setPendingImport(parsed)
       setConfirmImportOpen(true)

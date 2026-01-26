@@ -20,14 +20,6 @@ export function normalizeName(value) {
   return value.trim().toLowerCase()
 }
 
-export function isValidTimeRange(startTime, endTime) {
-  if (!endTime) return true
-  const start = timeStringToMinutes(startTime)
-  const end = timeStringToMinutes(endTime)
-  if (start === null || end === null) return false
-  return end >= start
-}
-
 export function isValidTimeMode(value) {
   return TIME_MODES.includes(value)
 }
@@ -103,8 +95,14 @@ export function validateAppointmentInput(
       errors.timeZone = 'Select a European timezone.'
     }
   }
-  if (!isValidTimeRange(values.startTime, values.endTime)) {
-    errors.endTime = 'End time must be after start time.'
+  if (values.endTime) {
+    const start = timeStringToMinutes(values.startTime)
+    const end = timeStringToMinutes(values.endTime)
+    if (start === null || end === null) {
+      errors.endTime = 'End time must be after start time.'
+    } else if (end < start && values.source?.type !== 'flight') {
+      errors.endTime = 'End time must be after start time.'
+    }
   }
   const { startUtcMs, endUtcMs } = buildUtcFields({
     date: values.date,
@@ -168,8 +166,11 @@ export function isValidAppointmentShape(item, categoryIds = null) {
     }
   }
   if (!isValidStatus(item.status)) return false
-  if (!isValidTimeRange(item.startTime, item.endTime)) return false
   if (item.endTime) {
+    const start = timeStringToMinutes(item.startTime)
+    const end = timeStringToMinutes(item.endTime)
+    if (start === null || end === null) return false
+    if (end < start && item.source?.type !== 'flight') return false
     if (!Number.isFinite(item.endUtcMs) || item.endUtcMs < item.startUtcMs) {
       return false
     }

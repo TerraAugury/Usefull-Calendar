@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { applyImport, buildExport, parseImport } from '../storage/storage'
+import { buildUtcFields } from '../utils/dates'
 import { resetStorage } from './testUtils'
 
 const hasIndexedDb = typeof indexedDB !== 'undefined'
@@ -57,6 +58,51 @@ describe('import/export', () => {
       it('does not overwrite on invalid import', async () => {
         const result = await applyImport(state, '{bad json}')
         expect(result).toBe(state)
+      })
+
+      it('exports and parses overnight flight appointments', async () => {
+        const { startUtcMs, endUtcMs } = buildUtcFields({
+          date: '2026-01-30',
+          startTime: '23:00',
+          endTime: '00:40',
+          timeMode: 'timezone',
+          timeZone: 'Europe/London',
+        })
+        const flightAppointment = {
+          id: 'apt-flight-1',
+          title: 'Overnight flight',
+          date: '2026-01-30',
+          startTime: '23:00',
+          endTime: '00:40',
+          categoryId: 'cat-1',
+          location: '',
+          notes: '',
+          status: 'planned',
+          createdAt: '2026-01-01T08:00:00.000Z',
+          updatedAt: '2026-01-01T08:00:00.000Z',
+          timeMode: 'timezone',
+          timeZone: 'Europe/London',
+          timeZoneSource: 'inferred',
+          startUtcMs,
+          endUtcMs,
+          source: { type: 'flight', id: 'flt-1' },
+        }
+        await applyImport(
+          null,
+          JSON.stringify({
+            ...stateWithPax,
+            appointments: [flightAppointment],
+          }),
+        )
+        const exported = await buildExport()
+        const parsed = parseImport(exported)
+        expect(parsed).not.toBeNull()
+        const parsedFlight = parsed.appointments.find(
+          (item) => item.id === flightAppointment.id,
+        )
+        expect(parsedFlight).toBeTruthy()
+        expect(parsedFlight.endTime).toBe('00:40')
+        expect(parsedFlight.source?.type).toBe('flight')
       })
     },
   )

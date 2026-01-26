@@ -45,6 +45,7 @@ export default function EditDialog({
   const [errors, setErrors] = useState({})
   const [forceTimeZonePicker, setForceTimeZonePicker] = useState(false)
   const formId = 'edit-appointment-form'
+  const isFlight = appointment?.source?.type === 'flight'
   const safeValues =
     values ?? {
       title: '',
@@ -65,6 +66,7 @@ export default function EditDialog({
       const startMinutes = timeStringToMinutes(next.startTime)
       const endMinutes = timeStringToMinutes(next.endTime)
       if (
+        !isFlight &&
         startMinutes !== null &&
         endMinutes !== null &&
         endMinutes < startMinutes
@@ -112,7 +114,7 @@ export default function EditDialog({
     !timeDisabled && isToday
       ? getNowTimeHHMM({ mode: timeMode, timeZone, now, stepMinutes: 1 })
       : ''
-  const endTimeMin = safeValues.startTime || ''
+  const endTimeMin = isFlight ? '' : safeValues.startTime || ''
   const dateBeforeMin =
     safeValues.date && dateMin && safeValues.date < dateMin
   const draftForValidation = {

@@ -12,6 +12,18 @@ describe('date utilities', () => {
     expect(startUtcMs).toBe(Date.UTC(2026, 0, 10, 10, 30, 0, 0))
   })
 
+  it('rolls end time to the next day when endTime is earlier', () => {
+    const { startUtcMs, endUtcMs } = buildUtcFields({
+      date: '2026-01-30',
+      startTime: '23:00',
+      endTime: '00:40',
+      timeMode: 'timezone',
+      timeZone: 'Europe/London',
+    })
+    expect(startUtcMs).toBe(Date.UTC(2026, 0, 30, 23, 0, 0, 0))
+    expect(endUtcMs).toBe(Date.UTC(2026, 0, 31, 0, 40, 0, 0))
+  })
+
   it('converts Europe/London in winter (GMT) to UTC', () => {
     const utcMs = zonedDateTimeToUtcMs({
       dateStr: '2026-01-15',
