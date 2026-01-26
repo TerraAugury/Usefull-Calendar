@@ -91,9 +91,9 @@ describe('Calendar past toggle', () => {
       await user.click(screen.getByLabelText(/More options/i))
     })
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /show past appointments/i }))
+      await user.click(screen.getByRole('button', { name: 'Past' }))
     })
 
-    await waitFor(() => expect(screen.getByText('Past')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Past item')).toBeInTheDocument())
   })
 })

@@ -261,7 +261,7 @@ describe('Calendar view switcher', () => {
       await user.click(screen.getByLabelText(/More options/i))
     })
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /show past appointments/i }))
+      await user.click(screen.getByRole('button', { name: 'Past' }))
     })
 
     expect(await screen.findByText('Past item')).toBeInTheDocument()
@@ -335,7 +335,7 @@ describe('Calendar view switcher', () => {
       await user.click(screen.getByLabelText(/More options/i))
     })
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /show past appointments/i }))
+      await user.click(screen.getByRole('button', { name: 'Past' }))
     })
 
     const pastDayAfter = container.querySelector('[data-date="2026-01-09"]')
