@@ -7,41 +7,21 @@ export const STORE_NAMES = {
   pax: 'pax',
 }
 
-export function reqToPromise(request) {
-  if (!request) return Promise.resolve(request)
-  if (typeof request.then === 'function') return request
-  return new Promise((resolve, reject) => {
-    request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error)
-  })
+export function toKeyValueRecords(obj) {
+  if (!obj || typeof obj !== 'object') return []
+  return Object.entries(obj).map(([key, value]) => ({ key, value }))
 }
 
-export async function openDb() {
-  if (typeof indexedDB === 'undefined') {
-    return Promise.reject(new Error('IndexedDB is not available'))
-  }
-  await db.open()
-  return db
+export function fromKeyValueRecords(rows) {
+  if (!Array.isArray(rows)) return {}
+  return rows.reduce((acc, record) => {
+    acc[record.key] = record.value
+    return acc
+  }, {})
 }
 
-export async function withTx(storeNames, mode, fn) {
-  await openDb()
-  const dexieMode = mode === 'readwrite' ? 'rw' : 'r'
-  const tables = storeNames.map((name) => db.table(name))
-  return db.transaction(dexieMode, tables, () =>
-    fn({
-      objectStore: (name) => {
-        const table = db.table(name)
-        return {
-          clear: () => table.clear(),
-          put: (value) => table.put(value),
-          get: (key) => table.get(key),
-          getAll: () => table.toArray(),
-          delete: (key) => table.delete(key),
-        }
-      },
-    }),
-  )
+export async function runWriteTransaction(fn) {
+  return db.transaction('rw', db.appointments, db.categories, db.preferences, db.pax, fn)
 }
 
 export function upsertAppointment(appointment) {
@@ -115,17 +95,11 @@ export function getAllPreferences() {
   return db
     .table(STORE_NAMES.preferences)
     .toArray()
-    .then((records) =>
-      records.reduce((acc, record) => {
-        acc[record.key] = record.value
-        return acc
-      }, {}),
-    )
+    .then((records) => fromKeyValueRecords(records))
 }
 
 export function setPreferencesBatch(values) {
-  const records = Object.entries(values).map(([key, value]) => ({ key, value }))
-  return db.table(STORE_NAMES.preferences).bulkPut(records)
+  return db.table(STORE_NAMES.preferences).bulkPut(toKeyValueRecords(values))
 }
 
 export function clearPreferences() {
@@ -137,8 +111,7 @@ export function setPaxState(key, value) {
 }
 
 export function setPaxBatch(values) {
-  const records = Object.entries(values).map(([key, value]) => ({ key, value }))
-  return db.table(STORE_NAMES.pax).bulkPut(records)
+  return db.table(STORE_NAMES.pax).bulkPut(toKeyValueRecords(values))
 }
 
 export function getPaxState(key) {
@@ -149,15 +122,7 @@ export function getPaxState(key) {
 }
 
 export function getAllPaxState() {
-  return db
-    .table(STORE_NAMES.pax)
-    .toArray()
-    .then((records) =>
-      records.reduce((acc, record) => {
-        acc[record.key] = record.value
-        return acc
-      }, {}),
-    )
+  return db.table(STORE_NAMES.pax).toArray().then(fromKeyValueRecords)
 }
 
 export function clearPax() {

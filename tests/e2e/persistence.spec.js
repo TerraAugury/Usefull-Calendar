@@ -109,6 +109,52 @@ test('persistence: add waits for hydration and survives reload', async ({ page }
   await expect(page.getByText('Hydration hold')).toBeVisible()
 })
 
+test('persistence: delete survives reload', async ({ page }) => {
+  const seedData = buildSeedData()
+  await initApp(page, { seedData })
+
+  const card = page.locator('[data-appointment-id="apt_sample_08"]')
+  await expect(card).toBeVisible()
+  await card.click()
+
+  const detailsDialog = page.getByRole('dialog', { name: /evening walk/i })
+  await expect(detailsDialog).toBeVisible()
+  await detailsDialog.getByRole('button', { name: 'Delete' }).click()
+
+  const confirmDialog = page.getByRole('dialog', { name: /delete appointment/i })
+  await expect(confirmDialog).toBeVisible()
+  await confirmDialog.getByRole('button', { name: 'Delete' }).click()
+  await expect(confirmDialog).not.toBeVisible()
+
+  const deletedCard = page.locator('.appointment-card', {
+    hasText: 'Evening walk',
+  })
+  await expect(deletedCard).toHaveCount(0)
+
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Calendar' })).toBeVisible()
+  await expect(deletedCard).toHaveCount(0)
+})
+
+test('persistence: reset survives reload', async ({ page }) => {
+  const seedData = buildSeedData()
+  await initApp(page, { seedData })
+
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await page.getByRole('button', { name: /reset all data/i }).click()
+  const resetDialog = page.getByRole('dialog', { name: /reset everything/i })
+  await expect(resetDialog).toBeVisible()
+  await resetDialog.getByRole('button', { name: 'Reset' }).click()
+  await expect(resetDialog).not.toBeVisible()
+
+  await page.getByRole('button', { name: 'Calendar' }).click()
+  await expect(page.locator('.appointment-card')).toHaveCount(0)
+
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Calendar' })).toBeVisible()
+  await expect(page.locator('.appointment-card')).toHaveCount(0)
+})
+
 test('persistence: export and re-import restores data', async ({ page }) => {
   const seedData = buildSeedData()
   await initApp(page, { seedData })

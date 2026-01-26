@@ -84,4 +84,14 @@ describe('import/export', () => {
     expect(parsedWithout).not.toBeNull()
     expect(parsedWith).not.toBeNull()
   })
+
+  it('rejects unknown schemaVersion', () => {
+    const base = {
+      categories: [{ id: 'cat-1', name: 'Work', color: 'indigo' }],
+      appointments: [],
+      preferences: { theme: 'system' },
+    }
+    const parsed = parseImport(JSON.stringify({ ...base, schemaVersion: 2 }))
+    expect(parsed).toBeNull()
+  })
 })
